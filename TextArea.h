@@ -25,6 +25,8 @@ public:
 	float width = 0.0f;
 	float height = 0.0f;
 
+	float lineHeight = 0.25f;
+
 	std::string text = "";
 	float gapBetweenLines = 0.0f;
 	std::vector<std::string> words;
@@ -49,6 +51,18 @@ public:
 	void FillGlobalTextArrays() {
 
 		auto glyphsMap = reader->getGlyphs();
+		float curWidth = 0;
+		float curHeight = 0;
+		float yLine = 0.0f;
+		float xOffset = 0.0f;
+
+		if (!IsUI) {
+			yLine = 0.5f;
+			xOffset = 0.15f;
+		}
+		else {
+			xOffset = 0.02f;
+		}
 
 		for (int i = 0; i < sampleString.length(); i++)
 		{
@@ -56,19 +70,18 @@ public:
 			auto curGlyph = glyphsMap[sampleString[i]];
 			//float yOffset = -(curGlyph.height - curGlyph.yOffset) / (2 * 512.0f);
 			float yOffset = (0.0f - curGlyph.yOffset) / (512.0f);
-			
+
 			Transform trans;
 			trans.position += transform.position;
 
-			trans.position += glm::vec3(textCursor * 2, yOffset * (curGlyph.height / 512.0f) * 2.0f, 0.0f);
+			trans.position += glm::vec3(xOffset + textCursor * 2, -yLine * lineHeight + yOffset * (curGlyph.height / 512.0f) * 2.0f, 0.0f);
 			trans.scale = glm::vec3((curGlyph.width / 512.0f), (curGlyph.height / 512.0f), 1.0f);
 			if (IsUI) {
-				trans.scale *= 0.25f;
+				trans.scale *= 0.15f;
 			}
 			else {
 				trans.scale *= 1.0f;
 			}
-
 
 			if (curGlyph.width == 0.0f && curGlyph.height == 0.0f) {
 				trans.scale = glm::vec3((curGlyph.xAdvance / 512.0f), 0.0f, 1.0f);
@@ -84,8 +97,30 @@ public:
 			//trans.position *= 2.0f;
 			//std::cout << lastXpos << std::endl;
 			//std::cout << textCursor * 2 << std::endl;
-			textCursor += trans.scale.x;
+			curWidth = (trans.position.x - transform.position.x);
+			//std::cout << curWidth << " : " << width << std::endl;
+			if (curWidth + xOffset > width * 2) {
+				trans.position -= glm::vec3(textCursor * 2, -yLine * lineHeight + yOffset * (curGlyph.height / 512.0f) * 2.0f, 0.0f);
 
+				if (!IsUI) {
+					yLine++;
+				}
+				else {
+					yLine += 0.25f;
+				}
+
+				textCursor = 0;
+
+				trans.position += glm::vec3(textCursor * 2, -yLine * lineHeight + yOffset * (curGlyph.height / 512.0f) * 2.0f, 0.0f);
+
+			}
+
+			curHeight = transform.position.y - trans.position.y;
+			if (curHeight > height * 2) {
+				trans.scale.y = 0.0f;
+			}
+
+			textCursor += trans.scale.x;
 			if (IsUI) {
 				trans.position.z -= 0.1f;
 			}

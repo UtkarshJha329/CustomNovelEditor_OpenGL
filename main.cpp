@@ -173,6 +173,8 @@ int main()
 		buttons[i].init(i);
 		buttons[i].textArea.transform = buttons[i].transform;
 		buttons[i].textArea.transform.position.x -= 0.1f;
+		buttons[i].textArea.width = 0.1f;
+		buttons[i].textArea.height = 0.1f;
 		buttons[i].textArea.sampleString = "BUTTON";
 		buttons[i].textArea.IsUI = 1.0f;
 		buttons[i].textArea.FillGlobalTextArrays();
@@ -201,7 +203,9 @@ int main()
 		memcpy(&transformsFlattened[i * (int)16], head, 64);
 		notes[i].textArea.transform = notes[i].transform;
 		notes[i].textArea.transform.position -= glm::vec3(notes[i].width, -notes[i].height, 0.0f);
-		notes[i].textArea.sampleString = "THIS IS A NOTE.";
+		notes[i].textArea.width = notes[i].width;
+		notes[i].textArea.height = notes[i].height;
+		notes[i].textArea.sampleString = "To dispriz'd coil, and be: to othe mind by a life, and love, and mome of somenterprises calamity opposing end swear, to dream:";
 		notes[i].textArea.IsUI = 0.0f;
 		notes[i].textArea.FillGlobalTextArrays();
 	}
