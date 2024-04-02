@@ -6,6 +6,9 @@
 
 #include <iostream>
 
+#include "Transform.h"
+#include "TextArea.h"
+
 enum class UI_TYPE {
 
 	BUTTON,
@@ -24,6 +27,8 @@ public:
 	int entityID = -1;
 
 	UI_TYPE type;
+
+	Transform transform;
 
 	virtual void OnHover() = 0;
 	virtual void OnClick(bool leftClick, bool rightClick, std::function<void(void*)> onClick_callback_func, void* args) = 0;
@@ -67,7 +72,7 @@ public:
 
 };
 
-class Button : protected UI {
+class Button : public UI {
 
 	UI* nextUIItem;
 	std::vector<UI*> childrenItems;

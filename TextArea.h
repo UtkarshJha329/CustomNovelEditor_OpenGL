@@ -1,0 +1,135 @@
+#pragma once
+
+#include <vector>
+#include <string>
+
+#include "BMFontReader.h"
+#include "Transform.h"
+#include "ShaderClass.h"
+
+#include "VAO.h"
+#include "VBO.h"
+#include "EBO.h"
+
+class TextArea {
+
+public:
+
+	TextArea() {
+		ID = totalTextAreas + 1;
+		totalTextAreas++;
+	}
+
+	int ID = 0;
+
+	float width = 0.0f;
+	float height = 0.0f;
+
+	std::string text = "";
+	float gapBetweenLines = 0.0f;
+	std::vector<std::string> words;
+
+	std::string sampleString = "This is sample text.";
+
+	Transform transform;
+	float IsUI = 0.0f;
+
+	static int totalTextAreas;
+
+	static BMFontReader* reader;
+
+	static Shader* textShader;
+	static std::vector<float> textTransformsFlattened;	
+	static std::vector<float> texCoords;
+	static std::vector<float> isUI;
+	static int totalGlyphs;
+	float textCursor = 0.0f;
+
+	void FillGlobalTextArrays() {
+
+		auto glyphsMap = reader->getGlyphs();
+
+		for (int i = 0; i < sampleString.length(); i++)
+		{
+			totalGlyphs++;
+			auto curGlyph = glyphsMap[sampleString[i]];
+			//float yOffset = -(curGlyph.height - curGlyph.yOffset) / (2 * 512.0f);
+			float yOffset = (0.0f - curGlyph.yOffset) / (512.0f);
+
+			transform.position = glm::vec3(textCursor * 2, yOffset * (curGlyph.height / 512.0f) * 2.0f, 0.0f);
+			transform.scale = glm::vec3((curGlyph.width / 512.0f), (curGlyph.height / 512.0f), 1.0f);
+			transform.scale *= 0.25f;
+
+			if (curGlyph.width == 0.0f && curGlyph.height == 0.0f) {
+				transform.scale = glm::vec3((curGlyph.xAdvance / 512.0f), 0.0f, 1.0f);
+				transform.scale *= 0.15f;
+			}
+
+			transform.position -= glm::vec3(0.49f, 0.f, 0.0);
+			transform.position *= 2.0f;
+			//std::cout << lastXpos << std::endl;
+			//std::cout << textCursor * 2 << std::endl;
+			textCursor += transform.scale.x;
+
+			isUI.push_back(IsUI);
+			//std::cout << isUI.size() << " : " << isUI[isUI.size() - 1] << std::endl;
+
+			float* head = glm::value_ptr(*transform.CalculateTransformMatr());
+
+			for (int j = 0; j < 16; j++)
+			{
+				textTransformsFlattened.push_back(head[j]);
+			}
+
+			texCoords.push_back(curGlyph.x / 512.0f);
+			texCoords.push_back((512.0f - (curGlyph.y + curGlyph.height)) / 512.0f);
+			texCoords.push_back(0.0f);
+			texCoords.push_back(0.0f);
+			texCoords.push_back((curGlyph.x + curGlyph.width) / 512.0f);
+			texCoords.push_back((512.0f - (curGlyph.y + curGlyph.height)) / 512.0f);
+			texCoords.push_back(0.0f);
+			texCoords.push_back(0.0f);
+			texCoords.push_back((curGlyph.x + curGlyph.width) / 512.0f);
+			texCoords.push_back((512.0f - (curGlyph.y)) / 512.0f);
+			texCoords.push_back(0.0f);
+			texCoords.push_back(0.0f);
+			texCoords.push_back(curGlyph.x / 512.0f);
+			texCoords.push_back((512.0f - curGlyph.y) / 512.0f);
+			texCoords.push_back(0.0f);
+			texCoords.push_back(0.0f);
+		}
+	}
+
+	inline static VAO textVAO;
+	inline static VBO textVBO;
+	inline static VBO textIsUIVBO;
+	inline static VBO textTextureCoordsVBO;
+	inline static VBO textTransformsVBO;
+	inline static EBO textEBO;
+
+	static void BindVAOsVBOsEBOs(float* textAreavertices, unsigned int* textAreaindices) {
+
+		textVAO.Init();
+
+		//Text RENDERING UI
+		textVAO.Bind();
+		textVBO.Init(textAreavertices, sizeof(float) * 12, GL_STATIC_DRAW);
+		textIsUIVBO.Init(TextArea::isUI.data(), sizeof(float) * TextArea::isUI.size(), GL_STATIC_DRAW);
+		textTextureCoordsVBO.Init(TextArea::texCoords.data(), sizeof(float) * TextArea::texCoords.size(), GL_DYNAMIC_DRAW);
+		textTransformsVBO.Init(TextArea::textTransformsFlattened.data(), sizeof(float) * TextArea::textTransformsFlattened.size(), GL_DYNAMIC_DRAW);
+		textTransformsVBO.Bind();
+
+		textEBO.Init(textAreaindices, sizeof(unsigned int) * 6);
+		textVAO.LinkAttrib(textVBO, 0, 3, GL_FLOAT, 3 * sizeof(float), (void*)0);
+		textVAO.LinkTransformAttrib(textTransformsVBO, 1);
+		textVAO.LinkTransformAttrib(textTextureCoordsVBO, 5);
+		textVAO.LinkAttrib(textIsUIVBO, 9, 1, GL_FLOAT, sizeof(float), (void*)0);
+		glVertexAttribDivisor(9, 1);
+
+
+		textVAO.Unbind();
+		textVBO.Unbind();
+		textTransformsVBO.Unbind();
+		textEBO.Unbind();
+	}
+};

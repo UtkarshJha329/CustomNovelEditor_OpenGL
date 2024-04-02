@@ -2,13 +2,22 @@
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in mat4 aTransform;
 layout (location = 5) in mat4 aTexCoords;
+layout (location = 9) in float aUI;
 
 out vec2 oTexCoords;
 out vec3 color;
 
+uniform mat4 perspectiveProj;
+uniform mat4 cameraTrans;
+
 void main()
 {
-	gl_Position = aTransform * vec4(aPos, 1.0f);
+	if(aUI == 0.0f){
+		vec4 pos = perspectiveProj * inverse(cameraTrans) * aTransform * vec4(aPos, 1.0f);
+		gl_Position = pos;
+	}else{
+		gl_Position = aTransform * vec4(aPos, 1.0f);
+	}
 
 	if(gl_VertexID == 3){										//TopRight
 		oTexCoords = vec2(aTexCoords[3][0], aTexCoords[3][1]);

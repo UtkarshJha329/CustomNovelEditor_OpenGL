@@ -7,7 +7,8 @@
 
 #include "stb_image.h"
 
-#include "Transform.h"
+#include "TextArea.h"
+#include "Note.h"
 #include "Camera.h"
 
 #include"shaderClass.h"
@@ -32,6 +33,13 @@
 #define NUM_NOTES 10
 #define NUM_UI_PANELS 5
 
+
+Shader* TextArea::textShader;
+std::vector<float> TextArea::textTransformsFlattened;
+std::vector<float> TextArea::texCoords;
+std::vector<float> TextArea::isUI;
+int TextArea::totalGlyphs;
+int TextArea::totalTextAreas;
 
 // Vertices coordinates
 float vertices[] =
@@ -96,8 +104,16 @@ void ButtonClickTest(void* a) {
 	}
 }
 
+BMFontReader* TextArea::reader;
+
 int main()
 {
+	BMFontReader reader("./fonts/TestFontDF.fnt");
+	reader.read();
+
+	TextArea::reader = &reader;
+	
+
 	glfwInit();
 
 	UI_MANAGER ui_manager;
@@ -120,7 +136,7 @@ int main()
 	glViewport(0, 0, MAIN_WINDOW_WIDTH, MAIN_WINDOW_HEIGHT);
 
 	glfwSetCursorPosCallback(window, mouse_callback);
-
+	glfwSetKeyCallback(window, Input::keyboard_callback);
 	// tell GLFW to capture our mouse
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
@@ -129,25 +145,26 @@ int main()
 
 	std::vector<float> ui_transformsFlattened(NUM_UI_PANELS * 16);
 	srand((unsigned int)time(0));
-	std::vector<Transform> ui_transforms(NUM_UI_PANELS);
+
 	std::vector<float> ui_visible(NUM_UI_PANELS);
 	std::vector<Button> buttons(NUM_UI_PANELS);
 	for (int i = 0; i < NUM_UI_PANELS; i++)
 	{
+		buttons[i].transform.position.x = 5.0f;
 		float x = (float)rand() / (RAND_MAX);
 		float y = (float)rand() / (RAND_MAX);
 		float z = (float)rand() / (RAND_MAX);
-		ui_transforms[i].position = glm::vec3(x, y, z);
-		ui_transforms[i].position = (ui_transforms[i].position - 0.5f) * 2.0f;
-		ui_transforms[i].position *= 1.0f;
+		buttons[i].transform.position = glm::vec3(x, y, z);
+		buttons[i].transform.position = (buttons[i].transform.position - 0.5f) * 2.0f;
+		buttons[i].transform.position *= 1.0f;
 
 		float sx = (float)rand() / (RAND_MAX);
 		float sy = (float)rand() / (RAND_MAX);
 		float sz = (float)rand() / (RAND_MAX);
-		ui_transforms[i].scale = glm::vec3(0.1f);
+		buttons[i].transform.scale = glm::vec3(0.1f);
 		ui_visible[i] = 1.0f;
 
-		float* head = glm::value_ptr(*ui_transforms[i].CalculateTransformMatr());
+		float* head = glm::value_ptr(*buttons[i].transform.CalculateTransformMatr());
 
 		memcpy(&ui_transformsFlattened[i * (int)16], head, 64);
 		buttons[i].init(i);
@@ -157,25 +174,26 @@ int main()
 
 	std::vector<float> transformsFlattened(NUM_NOTES * 16);
 	srand((unsigned int)time(0));
-	std::vector<Transform> transforms(NUM_NOTES);
+	std::vector<Note> notes(NUM_NOTES);
 	for (int i = 0; i < NUM_NOTES; i++)
 	{
 		float x = (float)rand() / (RAND_MAX);
 		float y = (float)rand() / (RAND_MAX);
 		float z = (float)rand() / (RAND_MAX);
-		transforms[i].position = glm::vec3(x, y, z);
-		transforms[i].position = (transforms[i].position - 0.5f) * 2.0f;
-		transforms[i].position *= 10.0f;
+		notes[i].transform.position = glm::vec3(x, y, z);
+		notes[i].transform.position = (notes[i].transform.position - 0.5f) * 2.0f;
+		notes[i].transform.position *= 10.0f;
 
-		transforms[i].scale = glm::vec3(1.0f);
+		notes[i].transform.scale = glm::vec3(1.0f);
 
-		float* head = glm::value_ptr(*transforms[i].CalculateTransformMatr());
+		float* head = glm::value_ptr(*notes[i].transform.CalculateTransformMatr());
 
 		memcpy(&transformsFlattened[i * (int)16], head, 64);
 	}
 
 	//NOTES drawing VAOs and VBOs
 	VAO notesVAO, uiVAO;
+	notesVAO.Init();
 	notesVAO.Bind();
 
 	VBO notesVBO(vertices, sizeof(vertices), GL_STATIC_DRAW);
@@ -194,6 +212,7 @@ int main()
 	notesEBO.Unbind();
 
 	//UI DRAWING VAOs and VBOs
+	uiVAO.Init();
 	uiVAO.Bind();
 
 	VBO uiVBO(vertices, sizeof(vertices), GL_STATIC_DRAW);
@@ -217,84 +236,20 @@ int main()
 #pragma endregion
 
 
-	std::string sampleString = "This is sample text.";
+	std::string sampleString = "This is the sample text.";
 
-	BMFontReader reader("./fonts/TestFontDF.fnt");
-	reader.read();
+	TextArea ta1;
+	TextArea ta2;
+	
+	TextArea::textShader = new Shader("UITextBasic.vert", "UITextBasic.frag");;
 
-	Shader uiTextShader("UITextBasic.vert", "UITextBasic.frag");
-	std::vector<float> textTransformsFlattened(16 * sampleString.length());
-	std::vector<Transform> textTransforms(sampleString.length());
-	std::unordered_map<char, Glyph> glyphsMap = reader.getGlyphs();
-	std::vector<float> texCoords;
-	std::vector<float> texCoordsB;
-	float textCursor = 0.0f;
-	float padding = 0.1f;
-	glm::vec2 line = glm::vec2(0.0f);
-	for (int i = 0; i < sampleString.length(); i++)
-	{
-		auto curGlyph = glyphsMap[sampleString[i]];
-		//float yOffset = -(curGlyph.height - curGlyph.yOffset) / (2 * 512.0f);
-		float yOffset = (0.0f - curGlyph.yOffset) / (512.0f);
+	ta1.sampleString = sampleString;
+	ta2.sampleString = sampleString;
+	ta2.IsUI = 1.0f;
+	ta1.FillGlobalTextArrays();
+	ta2.FillGlobalTextArrays();
+	TextArea::BindVAOsVBOsEBOs(vertices, indices);
 
-		textTransforms[i].position = glm::vec3(textCursor * 2, yOffset * (curGlyph.height / 512.0f), 0.0f);
-		textTransforms[i].scale = glm::vec3((curGlyph.width / 512.0f), (curGlyph.height / 512.0f), 1.0f);
-		textTransforms[i].scale *= 0.25f;
-
-		if (curGlyph.width == 0.0f && curGlyph.height == 0.0f) {
-			textTransforms[i].scale = glm::vec3((curGlyph.xAdvance / 512.0f), 0.0f, 1.0f);
-			textTransforms[i].scale *= 0.15f;
-		}
-
-		textTransforms[i].position -= glm::vec3(0.49f, 0.f, 0.0);
-		textTransforms[i].position *= 2.0f;
-		//std::cout << lastXpos << std::endl;
-		//std::cout << textCursor * 2 << std::endl;
-		textCursor += textTransforms[i].scale.x;
-
-
-		float* head = glm::value_ptr(*textTransforms[i].CalculateTransformMatr());
-
-		memcpy(&textTransformsFlattened[i * (int)16], head, 64);
-
-		texCoords.push_back(curGlyph.x / 512.0f);
-		texCoords.push_back((512.0f - (curGlyph.y + curGlyph.height)) / 512.0f);
-		texCoords.push_back(0.0f);
-		texCoords.push_back(0.0f);
-		texCoords.push_back((curGlyph.x + curGlyph.width) / 512.0f);
-		texCoords.push_back((512.0f - (curGlyph.y + curGlyph.height)) / 512.0f);
-		texCoords.push_back(0.0f);
-		texCoords.push_back(0.0f);
-		texCoords.push_back((curGlyph.x + curGlyph.width) / 512.0f);
-		texCoords.push_back((512.0f - (curGlyph.y)) / 512.0f);
-		texCoords.push_back(0.0f);
-		texCoords.push_back(0.0f);
-		texCoords.push_back(curGlyph.x / 512.0f);
-		texCoords.push_back((512.0f - curGlyph.y) / 512.0f);
-		texCoords.push_back(0.0f);
-		texCoords.push_back(0.0f);
-	}
-
-	VAO textVAO;
-
-	//Text RENDERING UI
-	textVAO.Bind();
-	VBO textVBO(vertices, sizeof(vertices), GL_STATIC_DRAW);
-	VBO textTextureCoordsVBO(texCoords.data(), sizeof(float) * texCoords.size(), GL_DYNAMIC_DRAW);
-	VBO textTransformsVBO(textTransformsFlattened.data(), sizeof(float) * textTransformsFlattened.size(), GL_DYNAMIC_DRAW);
-	textTransformsVBO.Bind();
-
-	EBO textEBO(indices, sizeof(indices));
-	textVAO.LinkAttrib(textVBO, 0, 3, GL_FLOAT, 3 * sizeof(float), (void*)0);
-	textVAO.LinkTransformAttrib(textTransformsVBO, 1);
-	textVAO.LinkTransformAttrib(textTextureCoordsVBO, 5);
-	glVertexAttribDivisor(9, 1);
-
-
-	textVAO.Unbind();
-	textVBO.Unbind();
-	textTransformsVBO.Unbind();
-	textEBO.Unbind();
 #pragma endregion
 
 #pragma region Texture Reading
@@ -326,9 +281,9 @@ int main()
 	}
 	stbi_image_free(data);
 
-	uiTextShader.Activate(); // don't forget to activate/use the shader before setting uniforms!
+	TextArea::textShader->Activate(); // don't forget to activate/use the shader before setting uniforms!
 	// either set it manually like so:
-	glUniform1i(glGetUniformLocation(uiTextShader.ID, "textureAtlas"), 0);
+	glUniform1i(glGetUniformLocation(TextArea::textShader->ID, "textureAtlas"), 0);
 
 #pragma endregion
 
@@ -378,16 +333,16 @@ int main()
 		
 
 		const float cameraSpeed = 2.5f * (float)deltaTime; // adjust accordingly
-		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		if (Input::KeyHeld(window, KeyCode::W))
 			camera.trans.position += cameraSpeed * camera.trans.front;
-		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		if (Input::KeyHeld(window, KeyCode::S))
 			camera.trans.position -= cameraSpeed * camera.trans.front;
-		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		if (Input::KeyHeld(window, KeyCode::A))
 			camera.trans.position -= cameraSpeed * camera.trans.right;
-		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		if (Input::KeyHeld(window, KeyCode::D))
 			camera.trans.position += cameraSpeed * camera.trans.right;
 
-		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT)) {
+		if (Input::rightMouseButtonHeld) {
 			camera.trans.rotation.y -= (mouseDeltaX * mouseSensitivity * (float)deltaTime);
 			camera.trans.rotation.x -= (mouseDeltaY * -mouseSensitivity * (float)deltaTime);
 
@@ -468,14 +423,20 @@ int main()
 			}
 		}
 
-		uiTextShader.Activate();
+		TextArea::textShader->Activate();
+		int persprojLocUIT = glGetUniformLocation(notesShaderProgram.ID, "perspectiveProj");
+		glUniformMatrix4fv(persprojLocUIT, 1, GL_FALSE, glm::value_ptr(perspectiveProj));
+		int cameraTransLocUIT = glGetUniformLocation(notesShaderProgram.ID, "cameraTrans");
+		glUniformMatrix4fv(cameraTransLocUIT, 1, GL_FALSE, glm::value_ptr(*camera.trans.CalculateTransformMatr()));
+
 		glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
 		glBindTexture(GL_TEXTURE_2D, fontAtlas);
-		textVAO.Bind();
+		//textVAO.Bind();
+		TextArea::textVAO.Bind();
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glDisable(GL_DEPTH);
-		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, sampleString.length());
+		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, TextArea::totalGlyphs);
 		//glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, 1);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -503,8 +464,9 @@ int main()
 	notesShaderProgram.Delete();
 	uiVAO.Delete();
 	uiShaderProgram.Delete();
-	textVAO.Delete();
-	uiTextShader.Delete();
+	//textVAO.Delete();
+	TextArea::textVAO.Delete();
+	TextArea::textShader->Delete();
 	glfwDestroyWindow(window);
 	glfwTerminate();
 	return 0;

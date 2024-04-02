@@ -62,7 +62,8 @@ public:
         return m_glyphs;
     }
 
-private:
+public:
     std::string m_filename;
+private:
     std::unordered_map<char, Glyph> m_glyphs;
 };
