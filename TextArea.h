@@ -32,6 +32,7 @@ public:
 	std::string sampleString = "This is sample text.";
 
 	Transform transform;
+	std::vector<Transform> glyphTrans;
 	float IsUI = 0.0f;
 
 	static int totalTextAreas;
@@ -55,31 +56,54 @@ public:
 			auto curGlyph = glyphsMap[sampleString[i]];
 			//float yOffset = -(curGlyph.height - curGlyph.yOffset) / (2 * 512.0f);
 			float yOffset = (0.0f - curGlyph.yOffset) / (512.0f);
+			
+			Transform trans;
+			trans.position += transform.position;
 
-			transform.position = glm::vec3(textCursor * 2, yOffset * (curGlyph.height / 512.0f) * 2.0f, 0.0f);
-			transform.scale = glm::vec3((curGlyph.width / 512.0f), (curGlyph.height / 512.0f), 1.0f);
-			transform.scale *= 0.25f;
-
-			if (curGlyph.width == 0.0f && curGlyph.height == 0.0f) {
-				transform.scale = glm::vec3((curGlyph.xAdvance / 512.0f), 0.0f, 1.0f);
-				transform.scale *= 0.15f;
+			trans.position += glm::vec3(textCursor * 2, yOffset * (curGlyph.height / 512.0f) * 2.0f, 0.0f);
+			trans.scale = glm::vec3((curGlyph.width / 512.0f), (curGlyph.height / 512.0f), 1.0f);
+			if (IsUI) {
+				trans.scale *= 0.25f;
+			}
+			else {
+				trans.scale *= 1.0f;
 			}
 
-			transform.position -= glm::vec3(0.49f, 0.f, 0.0);
-			transform.position *= 2.0f;
+
+			if (curGlyph.width == 0.0f && curGlyph.height == 0.0f) {
+				trans.scale = glm::vec3((curGlyph.xAdvance / 512.0f), 0.0f, 1.0f);
+				if (IsUI) {
+					trans.scale *= 0.15f;
+				}
+				else {
+					trans.scale *= 0.35f;
+				}
+			}
+
+			//trans.position -= glm::vec3(0.49f, 0.f, 0.0);
+			//trans.position *= 2.0f;
 			//std::cout << lastXpos << std::endl;
 			//std::cout << textCursor * 2 << std::endl;
-			textCursor += transform.scale.x;
+			textCursor += trans.scale.x;
+
+			if (IsUI) {
+				trans.position.z -= 0.1f;
+			}
+			else {
+				trans.position.z += 0.1f;
+			}
 
 			isUI.push_back(IsUI);
 			//std::cout << isUI.size() << " : " << isUI[isUI.size() - 1] << std::endl;
 
-			float* head = glm::value_ptr(*transform.CalculateTransformMatr());
-
+			float* head = glm::value_ptr(*trans.CalculateTransformMatr());
+			
 			for (int j = 0; j < 16; j++)
 			{
 				textTransformsFlattened.push_back(head[j]);
 			}
+
+			glyphTrans.push_back(trans);
 
 			texCoords.push_back(curGlyph.x / 512.0f);
 			texCoords.push_back((512.0f - (curGlyph.y + curGlyph.height)) / 512.0f);

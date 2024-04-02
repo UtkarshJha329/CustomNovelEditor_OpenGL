@@ -29,6 +29,7 @@ public:
 	UI_TYPE type;
 
 	Transform transform;
+	TextArea textArea;
 
 	virtual void OnHover() = 0;
 	virtual void OnClick(bool leftClick, bool rightClick, std::function<void(void*)> onClick_callback_func, void* args) = 0;

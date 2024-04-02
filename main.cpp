@@ -140,6 +140,9 @@ int main()
 	// tell GLFW to capture our mouse
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
+
+	TextArea::textShader = new Shader("UITextBasic.vert", "UITextBasic.frag");;
+
 #pragma region VBOs and Positions
 	Shader uiShaderProgram("UIBasic.vert", "UIBasic.frag");
 
@@ -168,6 +171,11 @@ int main()
 
 		memcpy(&ui_transformsFlattened[i * (int)16], head, 64);
 		buttons[i].init(i);
+		buttons[i].textArea.transform = buttons[i].transform;
+		buttons[i].textArea.transform.position.x -= 0.1f;
+		buttons[i].textArea.sampleString = "BUTTON";
+		buttons[i].textArea.IsUI = 1.0f;
+		buttons[i].textArea.FillGlobalTextArrays();
 	}
 
 	Shader notesShaderProgram("default.vert", "default.frag");
@@ -177,6 +185,8 @@ int main()
 	std::vector<Note> notes(NUM_NOTES);
 	for (int i = 0; i < NUM_NOTES; i++)
 	{
+		notes[i].width = 1.0f;
+		notes[i].height = 1.0f;
 		float x = (float)rand() / (RAND_MAX);
 		float y = (float)rand() / (RAND_MAX);
 		float z = (float)rand() / (RAND_MAX);
@@ -184,11 +194,16 @@ int main()
 		notes[i].transform.position = (notes[i].transform.position - 0.5f) * 2.0f;
 		notes[i].transform.position *= 10.0f;
 
-		notes[i].transform.scale = glm::vec3(1.0f);
+		notes[i].transform.scale = glm::vec3(notes[i].width, notes[i].height, 1.0f);
 
 		float* head = glm::value_ptr(*notes[i].transform.CalculateTransformMatr());
 
 		memcpy(&transformsFlattened[i * (int)16], head, 64);
+		notes[i].textArea.transform = notes[i].transform;
+		notes[i].textArea.transform.position -= glm::vec3(notes[i].width, -notes[i].height, 0.0f);
+		notes[i].textArea.sampleString = "THIS IS A NOTE.";
+		notes[i].textArea.IsUI = 0.0f;
+		notes[i].textArea.FillGlobalTextArrays();
 	}
 
 	//NOTES drawing VAOs and VBOs
@@ -235,19 +250,6 @@ int main()
 	uiEBO.Unbind();
 #pragma endregion
 
-
-	std::string sampleString = "This is the sample text.";
-
-	TextArea ta1;
-	TextArea ta2;
-	
-	TextArea::textShader = new Shader("UITextBasic.vert", "UITextBasic.frag");;
-
-	ta1.sampleString = sampleString;
-	ta2.sampleString = sampleString;
-	ta2.IsUI = 1.0f;
-	ta1.FillGlobalTextArrays();
-	ta2.FillGlobalTextArrays();
 	TextArea::BindVAOsVBOsEBOs(vertices, indices);
 
 #pragma endregion
@@ -435,7 +437,6 @@ int main()
 		TextArea::textVAO.Bind();
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		glDisable(GL_DEPTH);
 		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, TextArea::totalGlyphs);
 		//glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, 1);
 
