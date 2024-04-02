@@ -76,21 +76,11 @@ public:
 
 			trans.position += glm::vec3(xOffset + textCursor * 2, -yLine * lineHeight + yOffset * (curGlyph.height / 512.0f) * 2.0f, 0.0f);
 			trans.scale = glm::vec3((curGlyph.width / 512.0f), (curGlyph.height / 512.0f), 1.0f);
-			if (IsUI) {
-				trans.scale *= 0.15f;
-			}
-			else {
-				trans.scale *= 1.0f;
-			}
+			trans.scale *= IsUI ? 0.15f : 1.0f;
 
 			if (curGlyph.width == 0.0f && curGlyph.height == 0.0f) {
 				trans.scale = glm::vec3((curGlyph.xAdvance / 512.0f), 0.0f, 1.0f);
-				if (IsUI) {
-					trans.scale *= 0.15f;
-				}
-				else {
-					trans.scale *= 0.35f;
-				}
+				trans.scale *= (IsUI) ? 0.15f : 0.35f;
 			}
 
 			//trans.position -= glm::vec3(0.49f, 0.f, 0.0);

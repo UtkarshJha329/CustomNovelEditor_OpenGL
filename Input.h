@@ -52,6 +52,13 @@ public:
 		leftMouseButtonPressed = !old_leftMouseButtonPressed && !old_leftMouseButtonHeld && glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
 		rightMouseButtonPressed = !old_rightMouseButtonPressed && !old_rightMouseButtonHeld && glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
 
+
+		if (leftMouseButtonPressed && timeRemainingForDoubleClick <= 0.0f) {
+			timeRemainingForDoubleClick = doubleClickTime;
+		}
+		else if (leftMouseButtonPressed && timeRemainingForDoubleClick > 0.0f) {
+			doubleClicked = true;
+		}
 	}
 
 	static bool KeyUp(GLFWwindow* gameWindow, KeyCode key) {
@@ -85,12 +92,16 @@ public:
 	static bool rightMouseButtonHeld;
 	static bool leftMouseButtonReleased;
 	static bool rightMouseButtonReleased;
+	inline static bool doubleClicked = false;
 
 	static float mouseX, mouseY;
 
 	static const unsigned int numKeyCodes = 120;
 	static std::unordered_map<KeyCode, bool> keyDown;
 	static KeyCode keyCodesVec[];
+
+	inline static float doubleClickTime = 0.5f;
+	inline static float timeRemainingForDoubleClick = 0.0f;
 
 private:
 

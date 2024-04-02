@@ -33,6 +33,7 @@
 #define NUM_NOTES 10
 #define NUM_UI_PANELS 5
 
+#define Debug_Log(x) std::cout << x << std::endl
 
 Shader* TextArea::textShader;
 std::vector<float> TextArea::textTransformsFlattened;
@@ -151,16 +152,14 @@ int main()
 
 	std::vector<float> ui_visible(NUM_UI_PANELS);
 	std::vector<Button> buttons(NUM_UI_PANELS);
+	float y = -0.8f;
 	for (int i = 0; i < NUM_UI_PANELS; i++)
 	{
 		buttons[i].transform.position.x = 5.0f;
-		float x = (float)rand() / (RAND_MAX);
-		float y = (float)rand() / (RAND_MAX);
-		float z = (float)rand() / (RAND_MAX);
-		buttons[i].transform.position = glm::vec3(x, y, z);
-		buttons[i].transform.position = (buttons[i].transform.position - 0.5f) * 2.0f;
+		buttons[i].transform.position = glm::vec3(0.1f, y, 0.0f);
+		buttons[i].transform.position.x = (buttons[i].transform.position.x - 0.5f) * 2.0f;
 		buttons[i].transform.position *= 1.0f;
-
+		y += 0.4f;
 		float sx = (float)rand() / (RAND_MAX);
 		float sy = (float)rand() / (RAND_MAX);
 		float sz = (float)rand() / (RAND_MAX);
@@ -191,10 +190,12 @@ int main()
 		notes[i].height = 1.0f;
 		float x = (float)rand() / (RAND_MAX);
 		float y = (float)rand() / (RAND_MAX);
-		float z = (float)rand() / (RAND_MAX);
+		float z = 10.0f;
 		notes[i].transform.position = glm::vec3(x, y, z);
-		notes[i].transform.position = (notes[i].transform.position - 0.5f) * 2.0f;
-		notes[i].transform.position *= 10.0f;
+		notes[i].transform.position.x = (notes[i].transform.position.x - 0.5f) * 2.0f;
+		notes[i].transform.position.y = (notes[i].transform.position.y - 0.5f) * 2.0f;
+		notes[i].transform.position.x *= 5.0f;
+		notes[i].transform.position.y *= 5.0f;
 
 		notes[i].transform.scale = glm::vec3(notes[i].width, notes[i].height, 1.0f);
 
@@ -315,6 +316,8 @@ int main()
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
 	unsigned int frame = 0;
+	int dc = 0;
+	int lhd = 0;
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -323,7 +326,28 @@ int main()
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
+		//Debug_Log(deltaTime);
+
+		if (Input::doubleClicked && !Input::leftMouseButtonHeld) {
+			Input::doubleClicked = false;
+		}
+
 		Input::SetMouseInput(window);
+
+		if (Input::timeRemainingForDoubleClick > 0) {
+			Input::timeRemainingForDoubleClick -= deltaTime;
+		}
+
+		/*if(Input::leftMouseButtonHeld)
+		{
+			Debug_Log("LEFT MOUSE HELD DOWN." << lhd);
+			lhd++;
+		}
+
+		if (Input::doubleClicked) {
+			Debug_Log("DOUBLE CLICKED" << dc);
+			dc++;
+		}*/
 
 		glBindFramebuffer(GL_FRAMEBUFFER, camera.FBO);
 		glEnable(GL_DEPTH_TEST); // enable depth testing (is disabled for rendering screen-space quad)
@@ -388,7 +412,8 @@ int main()
 		int entityFromTexture = -1;
 
 
-		if (Input::leftMouseButtonPressed) {
+		if (Input::doubleClicked && lastSelectedEntity == -1) {
+			//Debug_Log("Double Clicked.");
 			//glBindFramebuffer(GL_FRAMEBUFFER, camera.FBO);
 			glReadBuffer(GL_COLOR_ATTACHMENT2);
 			glReadPixels(Input::mouseX, MAIN_WINDOW_HEIGHT - Input::mouseY, 1, 1, GL_RED_INTEGER, GL_INT, &entityFromTexture);
@@ -400,6 +425,9 @@ int main()
 			}
 			//std::cout << "Mouse over entity : " << entityFromTexture << std::endl;
 			//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		}
+		else if (Input::doubleClicked && lastSelectedEntity != -1) {
+			lastSelectedEntity = -1;
 		}
 
 		if (entityFromTexture != -1) {
@@ -425,8 +453,50 @@ int main()
 			}
 			else if (entityFromTexture < NUM_NOTES + NUM_UI_PANELS) {
 				lastSelectedEntity = entityFromTexture;
-				//std::cout << "ENTITY SELECTED: " << lastSelectedEntity << std::endl;
 			}
+		}
+
+		if (lastSelectedEntity != -1) {
+			//std::cout << "X" << std::endl;
+
+			glm::mat4 inverseCameraTrans = glm::inverse(*camera.trans.TransformMatrix());
+			glm::mat4 inverseCameraView = glm::inverse(glm::lookAt(camera.trans.position, camera.trans.front + camera.trans.position, camera.trans.up));
+			glm::mat4 inverseCameraProj = glm::inverse(perspectiveProj);
+
+			GLfloat x = ((2.0f * Input::mouseX) / MAIN_WINDOW_WIDTH) - 1.0f;
+			GLfloat y = 1.0f - (2.0f * Input::mouseY) / MAIN_WINDOW_HEIGHT;
+
+			glm::vec4 mouseCameraCoords = inverseCameraProj * glm::vec4(x, y, -1.0f, 1.0f);
+			mouseCameraCoords = glm::vec4(mouseCameraCoords.x, mouseCameraCoords.y, -1.0f, 0.0f);
+			
+			glm::vec3 rayDirection = glm::normalize(glm::vec3(inverseCameraView * mouseCameraCoords));
+			glm::vec3 rayOrigin = camera.trans.position;
+			float t = 0;
+
+			glm::vec3 planeNormal = glm::vec3(0.0f, 0.0f, 1.0f);
+			glm::vec3 pointOnPlane = glm::vec3(0.0f, 0.0f, 10.0f);
+			float d = 10.0f;
+
+
+			float denom = glm::dot(rayDirection, planeNormal);
+			if (glm::abs(denom) > 0.0001) {
+				glm::vec3 diff = pointOnPlane - rayOrigin;
+				t = (glm::dot(diff, planeNormal)) / denom;
+
+			}
+
+			glm::vec3 point = rayOrigin + rayDirection * t;
+			point.z = pointOnPlane.z;
+
+			int i = lastSelectedEntity - NUM_UI_PANELS;
+			notes[i].transform.position = glm::vec3(point);
+			float* curNewTrans = glm::value_ptr(*notes[i].transform.CalculateTransformMatr());
+			memcpy(&transformsFlattened[i * (int)16], curNewTrans, 64);
+
+			notesTransformsVBO.Bind();
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * transformsFlattened.size(), transformsFlattened.data());
+			notesTransformsVBO.Unbind();
+
 		}
 
 		TextArea::textShader->Activate();
