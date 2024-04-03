@@ -19,6 +19,6 @@ void main()
 
 	FragColor = vec4(vec3(1.0), alpha);
 	//FragColor = vec4(color, 1.0f);
-	ColourBuffer = vec4(1.0f);
-	thisEntityID = int(-1.0f);
+	//ColourBuffer = vec4(1.0f);
+	//thisEntityID = int(-1.0f);
 }

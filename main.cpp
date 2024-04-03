@@ -28,10 +28,7 @@
 #define MAIN_WINDOW_HEIGHT 600																						// Height of Main Window
 
 #define LOPE_FAILURE 0
-#define LOPE_SUCCESS 1
-
-#define NUM_NOTES 5
-#define NUM_UI_PANELS 5
+#define LOPE_SUCCESS 10
 
 #define Debug_Log(x) std::cout << x << std::endl
 
@@ -41,6 +38,9 @@ std::vector<float> TextArea::texCoords;
 std::vector<float> TextArea::isUI;
 int TextArea::totalGlyphs;
 int TextArea::totalTextAreas;
+
+int NUM_NOTES = 100;
+int NUM_UI_PANELS = 5;
 
 // Vertices coordinates
 float vertices[] =
@@ -198,8 +198,8 @@ int main()
 		notes[i].transform.position = glm::vec3(x, y, z);
 		notes[i].transform.position.x = (notes[i].transform.position.x - 0.5f) * 2.0f;
 		notes[i].transform.position.y = (notes[i].transform.position.y - 0.5f) * 2.0f;
-		notes[i].transform.position.x *= 5.0f;
-		notes[i].transform.position.y *= 5.0f;
+		notes[i].transform.position.x *= 10.0f;
+		notes[i].transform.position.y *= 10.0f;
 
 		notes[i].transform.scale = glm::vec3(notes[i].width, notes[i].height, 1.0f);
 
@@ -502,11 +502,11 @@ int main()
 			float* curNewTrans = glm::value_ptr(*notes[i].transform.CalculateTransformMatr());
 			memcpy(&transformsFlattened[i * (int)16], curNewTrans, 64);
 
-			float newTrans[16];
-			memcpy(&newTrans[0], curNewTrans, 64);
+			/*float newTrans[16];
+			memcpy(&newTrans[0], curNewTrans, 64);*/
 
 			notesTransformsVBO.Bind();
-			glBufferSubData(GL_ARRAY_BUFFER, i * 16 * sizeof(float), sizeof(newTrans), newTrans);
+			glBufferSubData(GL_ARRAY_BUFFER, i * 16 * sizeof(float), sizeof(float) * 16, curNewTrans);
 			notesTransformsVBO.Unbind();
 
 			const int start = notes[i].textArea.flattenedTransformStartIndex;
@@ -524,14 +524,9 @@ int main()
 				resetText[i] = false;
 			}
 			
-			//Debug_Log(offset.x << ", " << offset.y << ", " << offset.z);
-
-			//glm::vec3 temp = offset - glm::vec3(width, -height, 0.0f);
-
 			notes[i].textArea.FillGlobalTextArrays(values, offset, start, end);
 
 			TextArea::textTransformsVBO.Bind();
-			//glBufferSubData(GL_ARRAY_BUFFER, start * sizeof(float), sizeof(float) * values.size(), values.data());
 			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * TextArea::textTransformsFlattened.size(), TextArea::textTransformsFlattened.data());
 			TextArea::textTransformsVBO.Unbind();
 		}
