@@ -112,6 +112,7 @@ void ButtonClickTest(void* a) {
 
 BMFontReader* TextArea::reader;
 bool z = false;
+bool y = false;
 
 int main()
 {
@@ -359,13 +360,18 @@ int main()
 			undoredo.Undo();
 			z = true;
 		}
-		else if (Input::KeyHeld(window, KeyCode::LEFT_CTRL) && glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
+		else if (Input::KeyHeld(window, KeyCode::LEFT_CTRL) && glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS && !y) {
 			//Debug_Log("DID UNDO.");
-			//undoredo.Redo();
+			undoredo.Redo();
+			y = true;
 		}
 
 		if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_RELEASE) {
 			z = false;
+		}
+
+		if (glfwGetKey(window, GLFW_KEY_Y) == GLFW_RELEASE) {
+			y = false;
 		}
 
 		/*if(Input::leftMouseButtonHeld)
@@ -563,13 +569,14 @@ int main()
 						notesTransformsFlattened,
 						notesTransformsVBO,
 						TextArea::textTransformsVBO,
-						offset
+						offset,
 				};
 
 				ActionFunc notesMovindAF;
 				notesMovindAF.actionType = Action::ChangedNotePosition;
 				void* a = (void*)mpm;
 				notesMovindAF.undoFunction = UndoMousePickingMoving;
+				notesMovindAF.redoFunction = RedoMousePickingMoving;
 
 				ActionArgs aa{
 					a

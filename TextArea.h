@@ -74,7 +74,7 @@ public:
 		}
 		else {
 			glyphTrans.clear();
-			std::cout << "HERE INSTEAD" << std::endl;
+			//std::cout << "HERE INSTEAD" << std::endl;
 			auto glyphsMap = reader->getGlyphs();
 			float curWidth = 0;
 			float curHeight = 0;

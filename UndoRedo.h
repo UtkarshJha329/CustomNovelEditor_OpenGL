@@ -7,6 +7,8 @@
 #include "Transform.h"
 #include "TextArea.h"
 
+bool once = true;
+
 enum class Action {
 
 	ChangedNotePosition,
@@ -54,14 +56,13 @@ public:
 		if (curAction >= 0) {
 			actions[curAction].undoFunction(actionArgs[curAction].args);
 			curAction--;
-			std::cout << curAction << std::endl;
 		}
 		//actions.pop_back();
 		//actionArgs.pop_back();
 	}
 
 	static void Redo() {
-		if (curAction < actions.size()) {
+		if (curAction + 1 < actions.size()) {
 			actions[curAction + 1].redoFunction(actionArgs[curAction + 1].args);
 			curAction++;
 		}
@@ -108,6 +109,48 @@ void UndoMousePickingMoving(void* _mpm) {
 	glm::vec3 offset = mpm->oldTextAreaPos - mpm->notes[i].textArea.transform.position;
 	mpm->notes[i].textArea.transform.position = mpm->oldTextAreaPos;
 
+	if(once){
+		//offset += glm::vec3(mpm->notes[i].textArea.width, -mpm->notes[i].textArea.height, 0.0f);
+		once = false;
+	}
+	std::vector<float> values;
+	mpm->notes[i].textArea.FillGlobalTextArrays(values, offset, start, end);
+
+	const float arraySize = mpm->notes[i].textArea.glyphTrans.size() * 16;
+
+	mpm->textAreaTransformsVBO.Bind();
+	glBufferSubData(GL_ARRAY_BUFFER, start * sizeof(float), sizeof(float) * arraySize, &mpm->notes[i].textArea.textTransformsFlattened[start]);
+	mpm->textAreaTransformsVBO.Unbind();
+
+}
+
+void RedoMousePickingMoving(void* _mpm) {
+
+	MousePickingMoving* mpm = (MousePickingMoving*)_mpm;
+
+	int i = mpm->entity;
+	mpm->notes[i].transform.position = mpm->oldNotesPos;
+	float* curNewTrans = glm::value_ptr(*mpm->notes[i].transform.CalculateTransformMatr());
+	memcpy(&mpm->notesTransformsFlattened[i * (int)16], curNewTrans, 64);
+
+	/*float newTrans[16];
+	memcpy(&newTrans[0], curNewTrans, 64);*/
+
+	mpm->notesTransformsVBO.Bind();
+	glBufferSubData(GL_ARRAY_BUFFER, i * 16 * sizeof(float), sizeof(float) * 16, curNewTrans);
+	mpm->notesTransformsVBO.Unbind();
+
+
+	const int start = mpm->notes[i].textArea.flattenedTransformStartIndex;
+	const int end = mpm->notes[i].textArea.flattenedTransformEndIndex;
+
+	glm::vec3 offset = mpm->oldTextAreaPos - mpm->notes[i].textArea.transform.position;
+	mpm->notes[i].textArea.transform.position = mpm->oldTextAreaPos;
+
+	if (once) {
+		//offset += glm::vec3(mpm->notes[i].textArea.width, -mpm->notes[i].textArea.height, 0.0f);
+		once = false;
+	}
 	std::vector<float> values;
 	mpm->notes[i].textArea.FillGlobalTextArrays(values, offset, start, end);
 
