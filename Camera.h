@@ -20,6 +20,7 @@ public:
 
 	Shader fbShaderProgram;
 
+	glm::mat4 projection;
 
 	void InitCamera(float width, float height) {
 		glGenFramebuffers(1, &FBO);

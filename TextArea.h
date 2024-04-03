@@ -48,104 +48,137 @@ public:
 	static int totalGlyphs;
 	float textCursor = 0.0f;
 
-	void FillGlobalTextArrays() {
+	int flattenedTransformStartIndex = 0;
+	int flattenedTransformEndIndex = 0;
 
-		auto glyphsMap = reader->getGlyphs();
-		float curWidth = 0;
-		float curHeight = 0;
-		float yLine = 0.0f;
-		float xOffset = 0.0f;
+	void FillGlobalTextArrays(std::vector<float>& values, glm::vec3 offset = glm::vec3(0.0f) , int start = -1, int end = -1) {
 
-		if (!IsUI) {
-			yLine = 0.5f;
-			xOffset = 0.15f;
+		if (start != -1 && end != -1) {
+						
+			for (int i = 0; i < glyphTrans.size(); i++)
+			{
+				glyphTrans[i].position += offset;
+
+				float* head = glm::value_ptr(*glyphTrans[i].CalculateTransformMatr());
+
+				for (int j = 0; j < 16; j++)
+				{
+					textTransformsFlattened[start + (i) * 16 + j] = head[j];
+					values.push_back(head[j]);
+				}
+			}
+
+
 		}
 		else {
-			xOffset = 0.02f;
-		}
 
-		for (int i = 0; i < sampleString.length(); i++)
-		{
-			totalGlyphs++;
-			auto curGlyph = glyphsMap[sampleString[i]];
-			//float yOffset = -(curGlyph.height - curGlyph.yOffset) / (2 * 512.0f);
-			float yOffset = (0.0f - curGlyph.yOffset) / (512.0f);
+			auto glyphsMap = reader->getGlyphs();
+			float curWidth = 0;
+			float curHeight = 0;
+			float yLine = 0.0f;
+			float xOffset = 0.0f;
 
-			Transform trans;
-			trans.position += transform.position;
-
-			trans.position += glm::vec3(xOffset + textCursor * 2, -yLine * lineHeight + yOffset * (curGlyph.height / 512.0f) * 2.0f, 0.0f);
-			trans.scale = glm::vec3((curGlyph.width / 512.0f), (curGlyph.height / 512.0f), 1.0f);
-			trans.scale *= IsUI ? 0.15f : 1.0f;
-
-			if (curGlyph.width == 0.0f && curGlyph.height == 0.0f) {
-				trans.scale = glm::vec3((curGlyph.xAdvance / 512.0f), 0.0f, 1.0f);
-				trans.scale *= (IsUI) ? 0.15f : 0.35f;
-			}
-
-			//trans.position -= glm::vec3(0.49f, 0.f, 0.0);
-			//trans.position *= 2.0f;
-			//std::cout << lastXpos << std::endl;
-			//std::cout << textCursor * 2 << std::endl;
-			curWidth = (trans.position.x - transform.position.x);
-			//std::cout << curWidth << " : " << width << std::endl;
-			if (curWidth + xOffset > width * 2) {
-				trans.position -= glm::vec3(textCursor * 2, -yLine * lineHeight + yOffset * (curGlyph.height / 512.0f) * 2.0f, 0.0f);
-
-				if (!IsUI) {
-					yLine++;
-				}
-				else {
-					yLine += 0.25f;
-				}
-
-				textCursor = 0;
-
-				trans.position += glm::vec3(textCursor * 2, -yLine * lineHeight + yOffset * (curGlyph.height / 512.0f) * 2.0f, 0.0f);
-
-			}
-
-			curHeight = transform.position.y - trans.position.y;
-			if (curHeight > height * 2) {
-				trans.scale.y = 0.0f;
-			}
-
-			textCursor += trans.scale.x;
-			if (IsUI) {
-				trans.position.z -= 0.1f;
+			if (!IsUI) {
+				yLine = 0.5f;
+				xOffset = 0.15f;
 			}
 			else {
-				trans.position.z += 0.1f;
+				xOffset = 0.02f;
 			}
 
-			isUI.push_back(IsUI);
-			//std::cout << isUI.size() << " : " << isUI[isUI.size() - 1] << std::endl;
-
-			float* head = glm::value_ptr(*trans.CalculateTransformMatr());
-			
-			for (int j = 0; j < 16; j++)
+			for (int i = 0; i < sampleString.length(); i++)
 			{
-				textTransformsFlattened.push_back(head[j]);
+				totalGlyphs++;
+				auto curGlyph = glyphsMap[sampleString[i]];
+				//float yOffset = -(curGlyph.height - curGlyph.yOffset) / (2 * 512.0f);
+				float yOffset = (0.0f - curGlyph.yOffset) / (512.0f);
+
+				Transform trans;
+				trans.position += transform.position;
+
+				trans.position += glm::vec3(xOffset + textCursor * 2, -yLine * lineHeight + yOffset * (curGlyph.height / 512.0f) * 2.0f, 0.0f);
+				trans.scale = glm::vec3((curGlyph.width / 512.0f), (curGlyph.height / 512.0f), 1.0f);
+				trans.scale *= IsUI ? 0.15f : 1.0f;
+
+				if (curGlyph.width == 0.0f && curGlyph.height == 0.0f) {
+					trans.scale = glm::vec3((curGlyph.xAdvance / 512.0f), 0.0f, 1.0f);
+					trans.scale *= (IsUI) ? 0.15f : 0.35f;
+				}
+
+				//trans.position -= glm::vec3(0.49f, 0.f, 0.0);
+				//trans.position *= 2.0f;
+				//std::cout << lastXpos << std::endl;
+				//std::cout << textCursor * 2 << std::endl;
+				curWidth = (trans.position.x - transform.position.x);
+				//std::cout << curWidth << " : " << width << std::endl;
+				if (curWidth + xOffset > width * 2) {
+					trans.position -= glm::vec3(textCursor * 2, -yLine * lineHeight + yOffset * (curGlyph.height / 512.0f) * 2.0f, 0.0f);
+
+					if (!IsUI) {
+						yLine++;
+					}
+					else {
+						yLine += 0.25f;
+					}
+
+					textCursor = 0;
+
+					trans.position += glm::vec3(textCursor * 2, -yLine * lineHeight + yOffset * (curGlyph.height / 512.0f) * 2.0f, 0.0f);
+
+				}
+
+				curHeight = transform.position.y - trans.position.y;
+				if (curHeight > height * 2) {
+					trans.scale.y = 0.0f;
+				}
+
+				textCursor += trans.scale.x;
+				if (IsUI) {
+					trans.position.z -= 0.1f;
+				}
+				else {
+					trans.position.z += 0.1f;
+				}
+
+				isUI.push_back(IsUI);
+				//std::cout << isUI.size() << " : " << isUI[isUI.size() - 1] << std::endl;
+
+				float* head = glm::value_ptr(*trans.CalculateTransformMatr());
+
+				if (i == 0) {
+					flattenedTransformStartIndex = textTransformsFlattened.size();
+				}
+				if (i == sampleString.length() - 1) {
+					flattenedTransformEndIndex = textTransformsFlattened.size();
+				}
+
+				for (int j = 0; j < 16; j++)
+				{
+					textTransformsFlattened.push_back(head[j]);
+					values.push_back(head[j]);
+				}
+				
+
+				glyphTrans.push_back(trans);
+
+				texCoords.push_back(curGlyph.x / 512.0f);
+				texCoords.push_back((512.0f - (curGlyph.y + curGlyph.height)) / 512.0f);
+				texCoords.push_back(0.0f);
+				texCoords.push_back(0.0f);
+				texCoords.push_back((curGlyph.x + curGlyph.width) / 512.0f);
+				texCoords.push_back((512.0f - (curGlyph.y + curGlyph.height)) / 512.0f);
+				texCoords.push_back(0.0f);
+				texCoords.push_back(0.0f);
+				texCoords.push_back((curGlyph.x + curGlyph.width) / 512.0f);
+				texCoords.push_back((512.0f - (curGlyph.y)) / 512.0f);
+				texCoords.push_back(0.0f);
+				texCoords.push_back(0.0f);
+				texCoords.push_back(curGlyph.x / 512.0f);
+				texCoords.push_back((512.0f - curGlyph.y) / 512.0f);
+				texCoords.push_back(0.0f);
+				texCoords.push_back(0.0f);
 			}
 
-			glyphTrans.push_back(trans);
-
-			texCoords.push_back(curGlyph.x / 512.0f);
-			texCoords.push_back((512.0f - (curGlyph.y + curGlyph.height)) / 512.0f);
-			texCoords.push_back(0.0f);
-			texCoords.push_back(0.0f);
-			texCoords.push_back((curGlyph.x + curGlyph.width) / 512.0f);
-			texCoords.push_back((512.0f - (curGlyph.y + curGlyph.height)) / 512.0f);
-			texCoords.push_back(0.0f);
-			texCoords.push_back(0.0f);
-			texCoords.push_back((curGlyph.x + curGlyph.width) / 512.0f);
-			texCoords.push_back((512.0f - (curGlyph.y)) / 512.0f);
-			texCoords.push_back(0.0f);
-			texCoords.push_back(0.0f);
-			texCoords.push_back(curGlyph.x / 512.0f);
-			texCoords.push_back((512.0f - curGlyph.y) / 512.0f);
-			texCoords.push_back(0.0f);
-			texCoords.push_back(0.0f);
 		}
 	}
 

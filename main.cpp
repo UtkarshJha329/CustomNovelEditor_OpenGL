@@ -30,7 +30,7 @@
 #define LOPE_FAILURE 0
 #define LOPE_SUCCESS 1
 
-#define NUM_NOTES 10
+#define NUM_NOTES 5
 #define NUM_UI_PANELS 5
 
 #define Debug_Log(x) std::cout << x << std::endl
@@ -85,6 +85,8 @@ float mouseSensitivity = 100.0f;
 
 int lastSelectedUI = -1;
 int lastSelectedEntity = -1;
+
+bool resetText = true;
 
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
 
@@ -168,6 +170,8 @@ int main()
 
 		float* head = glm::value_ptr(*buttons[i].transform.CalculateTransformMatr());
 
+		std::vector<float> values;
+
 		memcpy(&ui_transformsFlattened[i * (int)16], head, 64);
 		buttons[i].init(i);
 		buttons[i].textArea.transform = buttons[i].transform;
@@ -176,7 +180,7 @@ int main()
 		buttons[i].textArea.height = 0.1f;
 		buttons[i].textArea.sampleString = "BUTTON";
 		buttons[i].textArea.IsUI = 1.0f;
-		buttons[i].textArea.FillGlobalTextArrays();
+		buttons[i].textArea.FillGlobalTextArrays(values);
 	}
 
 	Shader notesShaderProgram("default.vert", "default.frag");
@@ -201,6 +205,8 @@ int main()
 
 		float* head = glm::value_ptr(*notes[i].transform.CalculateTransformMatr());
 
+		std::vector<float> values;
+
 		memcpy(&transformsFlattened[i * (int)16], head, 64);
 		notes[i].textArea.transform = notes[i].transform;
 		notes[i].textArea.transform.position -= glm::vec3(notes[i].width, -notes[i].height, 0.0f);
@@ -208,7 +214,7 @@ int main()
 		notes[i].textArea.height = notes[i].height;
 		notes[i].textArea.sampleString = "To dispriz'd coil, and be: to othe mind by a life, and love, and mome of somenterprises calamity opposing end swear, to dream:";
 		notes[i].textArea.IsUI = 0.0f;
-		notes[i].textArea.FillGlobalTextArrays();
+		notes[i].textArea.FillGlobalTextArrays(values);
 	}
 
 	//NOTES drawing VAOs and VBOs
@@ -319,9 +325,11 @@ int main()
 	int dc = 0;
 	int lhd = 0;
 
+	camera.projection = glm::perspective(glm::radians(45.0f), float(MAIN_WINDOW_WIDTH) / MAIN_WINDOW_HEIGHT, 0.1f, 1000.0f);
+
 	while (!glfwWindowShouldClose(window))
 	{
-
+		
 		double currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
@@ -357,9 +365,8 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		notesShaderProgram.Activate();
-		glm::mat4 perspectiveProj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 1000.0f);
 		int persprojLoc = glGetUniformLocation(notesShaderProgram.ID, "perspectiveProj");
-		glUniformMatrix4fv(persprojLoc, 1, GL_FALSE, glm::value_ptr(perspectiveProj));
+		glUniformMatrix4fv(persprojLoc, 1, GL_FALSE, glm::value_ptr(camera.projection));
 		
 
 		const float cameraSpeed = 2.5f * (float)deltaTime; // adjust accordingly
@@ -428,6 +435,7 @@ int main()
 		}
 		else if (Input::doubleClicked && lastSelectedEntity != -1) {
 			lastSelectedEntity = -1;
+			//resetText = true;
 		}
 
 		if (entityFromTexture != -1) {
@@ -459,9 +467,9 @@ int main()
 		if (lastSelectedEntity != -1) {
 			//std::cout << "X" << std::endl;
 
-			glm::mat4 inverseCameraTrans = glm::inverse(*camera.trans.TransformMatrix());
+			camera.trans.TransformMatrix();
 			glm::mat4 inverseCameraView = glm::inverse(glm::lookAt(camera.trans.position, camera.trans.front + camera.trans.position, camera.trans.up));
-			glm::mat4 inverseCameraProj = glm::inverse(perspectiveProj);
+			glm::mat4 inverseCameraProj = glm::inverse(camera.projection);
 
 			GLfloat x = ((2.0f * Input::mouseX) / MAIN_WINDOW_WIDTH) - 1.0f;
 			GLfloat y = 1.0f - (2.0f * Input::mouseY) / MAIN_WINDOW_HEIGHT;
@@ -493,15 +501,43 @@ int main()
 			float* curNewTrans = glm::value_ptr(*notes[i].transform.CalculateTransformMatr());
 			memcpy(&transformsFlattened[i * (int)16], curNewTrans, 64);
 
+			float newTrans[16];
+			memcpy(&newTrans[0], curNewTrans, 64);
+
 			notesTransformsVBO.Bind();
-			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * transformsFlattened.size(), transformsFlattened.data());
+			glBufferSubData(GL_ARRAY_BUFFER, i * 16 * sizeof(float), sizeof(newTrans), newTrans);
 			notesTransformsVBO.Unbind();
 
+			const int start = notes[i].textArea.flattenedTransformStartIndex;
+			const int end = notes[i].textArea.flattenedTransformEndIndex;
+			std::vector<float> values;
+
+			glm::vec3 oldPos = notes[i].textArea.transform.position;
+			notes[i].textArea.transform.position = point;
+
+
+
+			glm::vec3 offset = point - oldPos;
+			if (glm::length(offset) > 0.1f && resetText) {
+				offset -= glm::vec3(notes[i].textArea.width, -notes[i].textArea.height, 0.0f);
+				resetText = false;
+			}
+			
+			//Debug_Log(offset.x << ", " << offset.y << ", " << offset.z);
+
+			//glm::vec3 temp = offset - glm::vec3(width, -height, 0.0f);
+
+			notes[i].textArea.FillGlobalTextArrays(values, offset, start, end);
+
+			TextArea::textTransformsVBO.Bind();
+			//glBufferSubData(GL_ARRAY_BUFFER, start * sizeof(float), sizeof(float) * values.size(), values.data());
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * TextArea::textTransformsFlattened.size(), TextArea::textTransformsFlattened.data());
+			TextArea::textTransformsVBO.Unbind();
 		}
 
 		TextArea::textShader->Activate();
 		int persprojLocUIT = glGetUniformLocation(notesShaderProgram.ID, "perspectiveProj");
-		glUniformMatrix4fv(persprojLocUIT, 1, GL_FALSE, glm::value_ptr(perspectiveProj));
+		glUniformMatrix4fv(persprojLocUIT, 1, GL_FALSE, glm::value_ptr(camera.projection));
 		int cameraTransLocUIT = glGetUniformLocation(notesShaderProgram.ID, "cameraTrans");
 		glUniformMatrix4fv(cameraTransLocUIT, 1, GL_FALSE, glm::value_ptr(*camera.trans.CalculateTransformMatr()));
 
