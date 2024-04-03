@@ -46,6 +46,7 @@ public:
 			}
 
 		}
+		std::cout << "ADDED NEW UNDO MOVE." << std::endl;
 		actions.push_back(actionFunc);
 		actionArgs.push_back(_args);
 		curAction++;
@@ -53,19 +54,31 @@ public:
 
 	static void Undo() {
 
+		std::cout << "Outside UNDO: " << curAction + 1 << ", " << actions.size() << std::endl;
 		if (curAction >= 0) {
-			actions[curAction].undoFunction(actionArgs[curAction].args);
-			curAction--;
+			if (curAction < actions.size()) {
+				actions[curAction].undoFunction(actionArgs[curAction].args);
+				std::cout << "Undo: " << curAction << ", " << actions.size() << std::endl;
+				curAction--;
+			}
 		}
 		//actions.pop_back();
 		//actionArgs.pop_back();
 	}
 
 	static void Redo() {
+		std::cout << "Outside REDO: " << curAction + 1 << ", " << actions.size() << std::endl;
 		if (curAction + 1 < actions.size()) {
 			actions[curAction + 1].redoFunction(actionArgs[curAction + 1].args);
+			std::cout << "Redo: " << curAction << ", " << actions.size() << std::endl;
 			curAction++;
 		}
+	}
+
+	void Flush() {
+		actions.clear();
+		actionArgs.clear();
+		curAction = -1;
 	}
 
 private:
@@ -77,12 +90,15 @@ private:
 struct MousePickingMoving {
 	glm::vec3 oldNotesPos;
 	glm::vec3 oldTextAreaPos;
+	glm::vec3 newNotesPos;
+	glm::vec3 newTextAreaPos;
 	int entity;
 	std::vector<Note>& notes;
 	std::vector<float>& notesTransformsFlattened;
 	VBO& notesTransformsVBO;
 	VBO& textAreaTransformsVBO;
 	glm::vec3 offset;
+	std::vector<bool>& resetPos;
 
 };
 
@@ -109,9 +125,9 @@ void UndoMousePickingMoving(void* _mpm) {
 	glm::vec3 offset = mpm->oldTextAreaPos - mpm->notes[i].textArea.transform.position;
 	mpm->notes[i].textArea.transform.position = mpm->oldTextAreaPos;
 
-	if(once){
+	if(!mpm->resetPos[i]) {
 		//offset += glm::vec3(mpm->notes[i].textArea.width, -mpm->notes[i].textArea.height, 0.0f);
-		once = false;
+		mpm->resetPos[i] = true;
 	}
 	std::vector<float> values;
 	mpm->notes[i].textArea.FillGlobalTextArrays(values, offset, start, end);
@@ -129,7 +145,7 @@ void RedoMousePickingMoving(void* _mpm) {
 	MousePickingMoving* mpm = (MousePickingMoving*)_mpm;
 
 	int i = mpm->entity;
-	mpm->notes[i].transform.position = mpm->oldNotesPos;
+	mpm->notes[i].transform.position = mpm->newNotesPos;
 	float* curNewTrans = glm::value_ptr(*mpm->notes[i].transform.CalculateTransformMatr());
 	memcpy(&mpm->notesTransformsFlattened[i * (int)16], curNewTrans, 64);
 
@@ -140,12 +156,14 @@ void RedoMousePickingMoving(void* _mpm) {
 	glBufferSubData(GL_ARRAY_BUFFER, i * 16 * sizeof(float), sizeof(float) * 16, curNewTrans);
 	mpm->notesTransformsVBO.Unbind();
 
-
 	const int start = mpm->notes[i].textArea.flattenedTransformStartIndex;
 	const int end = mpm->notes[i].textArea.flattenedTransformEndIndex;
 
-	glm::vec3 offset = mpm->oldTextAreaPos - mpm->notes[i].textArea.transform.position;
-	mpm->notes[i].textArea.transform.position = mpm->oldTextAreaPos;
+	glm::vec3 offset = mpm->newTextAreaPos - mpm->oldTextAreaPos;
+	mpm->notes[i].textArea.transform.position = mpm->newTextAreaPos;
+	
+	Debug(mpm->oldTextAreaPos);
+	Debug(mpm->newTextAreaPos);
 
 	if (once) {
 		//offset += glm::vec3(mpm->notes[i].textArea.width, -mpm->notes[i].textArea.height, 0.0f);

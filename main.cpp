@@ -90,6 +90,7 @@ int lastSelectedEntity = -1;
 bool recordedMovement = false;
 
 std::vector<bool> resetText(NUM_NOTES);
+std::vector<bool> resetTextPosUndo(NUM_NOTES);
 
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
 
@@ -113,6 +114,10 @@ void ButtonClickTest(void* a) {
 BMFontReader* TextArea::reader;
 bool z = false;
 bool y = false;
+
+
+void MoveNotes(std::vector<Note>& notes, std::vector<float>& notesTransformsFlattened
+	, glm::vec3 point, VBO& notesTransformsVBO, int i, UndoRedo& undoredo);
 
 int main()
 {
@@ -216,13 +221,14 @@ int main()
 
 		memcpy(&notesTransformsFlattened[i * (int)16], head, 64);
 		notes[i].textArea.transform = notes[i].transform;
-		notes[i].textArea.transform.position -= glm::vec3(notes[i].width, -notes[i].height, 0.0f);
+		//notes[i].textArea.transform.position += glm::vec3(-notes[i].width, notes[i].height, 0.0f);
 		notes[i].textArea.width = notes[i].width;
 		notes[i].textArea.height = notes[i].height;
 		notes[i].textArea.sampleString = "To dispriz'd coil, and be: to othe mind by a life, and love, and mome of somenterprises calamity opposing end swear, to dream:";
 		notes[i].textArea.IsUI = 0.0f;
 		notes[i].textArea.FillGlobalTextArrays(values);
 		resetText[i] = true;
+		resetTextPosUndo[i] = false;
 	}
 
 	//NOTES drawing VAOs and VBOs
@@ -244,6 +250,13 @@ int main()
 	notesVBO.Unbind();
 	notesTransformsVBO.Unbind();
 	notesEBO.Unbind();
+
+	for (int i = 0; i < NUM_NOTES; i++)
+	{
+		MoveNotes(notes, notesTransformsFlattened, notes[i].transform.position + glm::vec3(1.0f), notesTransformsVBO, i, undoredo);
+	}
+	undoredo.Flush();
+	recordedMovement = false;
 
 	//UI DRAWING VAOs and VBOs
 	uiVAO.Init();
@@ -310,7 +323,7 @@ int main()
 
 
 	Camera camera;
-	camera.trans.position = glm::vec3(0.0f, 0.0f, 10.0f);
+	camera.trans.position = glm::vec3(0.0f, 0.0f, 30.0f);
 	camera.trans.scale = glm::vec3(1.0f);
 
 	double deltaTime = 0.0f;	// Time between current frame and last frame
@@ -360,8 +373,8 @@ int main()
 			undoredo.Undo();
 			z = true;
 		}
-		else if (Input::KeyHeld(window, KeyCode::LEFT_CTRL) && glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS && !y) {
-			//Debug_Log("DID UNDO.");
+		else if (Input::KeyHeld(window, KeyCode::LEFT_CTRL) && glfwGetKey(window, GLFW_KEY_Y) && !y) {
+			//Debug_Log("DID ReDO.");
 			undoredo.Redo();
 			y = true;
 		}
@@ -525,66 +538,7 @@ int main()
 			glm::vec3 point = rayOrigin + rayDirection * t;
 			point.z = pointOnPlane.z;
 
-			int i = lastSelectedEntity - NUM_UI_PANELS;
-			glm::vec3 oldNotesPos = notes[i].transform.position;
-			notes[i].transform.position = glm::vec3(point);
-			float* curNewTrans = glm::value_ptr(*notes[i].transform.CalculateTransformMatr());
-			memcpy(&notesTransformsFlattened[i * (int)16], curNewTrans, 64);
-
-			/*float newTrans[16];
-			memcpy(&newTrans[0], curNewTrans, 64);*/
-
-			notesTransformsVBO.Bind();
-			glBufferSubData(GL_ARRAY_BUFFER, i * 16 * sizeof(float), sizeof(float) * 16, curNewTrans);
-			notesTransformsVBO.Unbind();
-
-			const int start = notes[i].textArea.flattenedTransformStartIndex;
-			const int end = notes[i].textArea.flattenedTransformEndIndex;
-			std::vector<float> values;
-
-			glm::vec3 oldTextAreaPos = notes[i].textArea.transform.position;
-			notes[i].textArea.transform.position = point;
-
-
-			glm::vec3 offset = point - oldTextAreaPos;
-			if (glm::length(offset) > 0.1f && resetText[i]) {
-				offset -= glm::vec3(notes[i].textArea.width, -notes[i].textArea.height, 0.0f);
-				resetText[i] = false;
-			}
-			
-			notes[i].textArea.FillGlobalTextArrays(values, offset, start, end);
-
-			const float arraySize = notes[i].textArea.glyphTrans.size() * 16;
-			
-			TextArea::textTransformsVBO.Bind();
-			glBufferSubData(GL_ARRAY_BUFFER, start * sizeof(float), sizeof(float)* arraySize, &notes[i].textArea.textTransformsFlattened[start]);
-			TextArea::textTransformsVBO.Unbind();
-
-			if (!recordedMovement) {
-				MousePickingMoving* mpm = new MousePickingMoving{
-						oldNotesPos,
-						oldTextAreaPos,
-						lastSelectedEntity - NUM_UI_PANELS,
-						notes,
-						notesTransformsFlattened,
-						notesTransformsVBO,
-						TextArea::textTransformsVBO,
-						offset,
-				};
-
-				ActionFunc notesMovindAF;
-				notesMovindAF.actionType = Action::ChangedNotePosition;
-				void* a = (void*)mpm;
-				notesMovindAF.undoFunction = UndoMousePickingMoving;
-				notesMovindAF.redoFunction = RedoMousePickingMoving;
-
-				ActionArgs aa{
-					a
-				};
-
-				undoredo.AddAction(notesMovindAF, aa);
-				recordedMovement = true;
-			}
+			MoveNotes(notes, notesTransformsFlattened, point, notesTransformsVBO, lastSelectedEntity - NUM_UI_PANELS,  undoredo);
 		}
 
 		TextArea::textShader->Activate();
@@ -635,6 +589,72 @@ int main()
 	glfwDestroyWindow(window);
 	glfwTerminate();
 	return 0;
+}
+
+void MoveNotes(std::vector<Note>& notes, std::vector<float>& notesTransformsFlattened
+				, glm::vec3 point, VBO& notesTransformsVBO, int i, UndoRedo& undoredo) {
+	glm::vec3 oldNotesPos = notes[i].transform.position;
+	notes[i].transform.position = glm::vec3(point);
+	float* curNewTrans = glm::value_ptr(*notes[i].transform.CalculateTransformMatr());
+	memcpy(&notesTransformsFlattened[i * (int)16], curNewTrans, 64);
+
+	/*float newTrans[16];
+	memcpy(&newTrans[0], curNewTrans, 64);*/
+
+	notesTransformsVBO.Bind();
+	glBufferSubData(GL_ARRAY_BUFFER, i * 16 * sizeof(float), sizeof(float) * 16, curNewTrans);
+	notesTransformsVBO.Unbind();
+
+	const int start = notes[i].textArea.flattenedTransformStartIndex;
+	const int end = notes[i].textArea.flattenedTransformEndIndex;
+	std::vector<float> values;
+
+	glm::vec3 oldTextAreaPos = notes[i].textArea.transform.position;
+	notes[i].textArea.transform.position = point;
+
+
+	glm::vec3 offset = point - oldTextAreaPos;
+	if (glm::length(offset) > 0.1f && resetText[i]) {
+		offset -= glm::vec3(notes[i].textArea.width, -notes[i].textArea.height, 0.0f);
+		resetText[i] = false;
+	}
+
+	notes[i].textArea.FillGlobalTextArrays(values, offset, start, end);
+
+	const float arraySize = notes[i].textArea.glyphTrans.size() * 16;
+
+	TextArea::textTransformsVBO.Bind();
+	glBufferSubData(GL_ARRAY_BUFFER, start * sizeof(float), sizeof(float) * arraySize, &notes[i].textArea.textTransformsFlattened[start]);
+	TextArea::textTransformsVBO.Unbind();
+
+	if (!recordedMovement) {
+		MousePickingMoving* mpm = new MousePickingMoving{
+				oldNotesPos,
+				oldTextAreaPos,
+				point,
+				point,
+				lastSelectedEntity - NUM_UI_PANELS,
+				notes,
+				notesTransformsFlattened,
+				notesTransformsVBO,
+				TextArea::textTransformsVBO,
+				offset,
+				resetTextPosUndo,
+		};
+
+		ActionFunc notesMovindAF;
+		notesMovindAF.actionType = Action::ChangedNotePosition;
+		void* a = (void*)mpm;
+		notesMovindAF.undoFunction = UndoMousePickingMoving;
+		notesMovindAF.redoFunction = RedoMousePickingMoving;
+
+		ActionArgs aa{
+			a
+		};
+
+		undoredo.AddAction(notesMovindAF, aa);
+		recordedMovement = true;
+	}
 }
 
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)

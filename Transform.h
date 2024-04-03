@@ -3,6 +3,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#define Debug(vec) std::cout << "(" << vec.x << ", " << vec.y << ", " << vec.z << ")" << std::endl
+
 class Transform {
 
 public:
