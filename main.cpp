@@ -86,7 +86,7 @@ float mouseSensitivity = 100.0f;
 int lastSelectedUI = -1;
 int lastSelectedEntity = -1;
 
-bool resetText = true;
+std::vector<bool> resetText(NUM_NOTES);
 
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
 
@@ -215,6 +215,7 @@ int main()
 		notes[i].textArea.sampleString = "To dispriz'd coil, and be: to othe mind by a life, and love, and mome of somenterprises calamity opposing end swear, to dream:";
 		notes[i].textArea.IsUI = 0.0f;
 		notes[i].textArea.FillGlobalTextArrays(values);
+		resetText[i] = true;
 	}
 
 	//NOTES drawing VAOs and VBOs
@@ -518,9 +519,9 @@ int main()
 
 
 			glm::vec3 offset = point - oldPos;
-			if (glm::length(offset) > 0.1f && resetText) {
+			if (glm::length(offset) > 0.1f && resetText[i]) {
 				offset -= glm::vec3(notes[i].textArea.width, -notes[i].textArea.height, 0.0f);
-				resetText = false;
+				resetText[i] = false;
 			}
 			
 			//Debug_Log(offset.x << ", " << offset.y << ", " << offset.z);
