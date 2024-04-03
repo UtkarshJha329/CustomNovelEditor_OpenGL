@@ -107,6 +107,10 @@ void UndoMousePickingMoving(void* _mpm) {
 	MousePickingMoving* mpm = (MousePickingMoving*)_mpm;
 
 	int i = mpm->entity;
+	
+	mpm->newTextAreaPos = mpm->notes[i].textArea.transform.position;
+	mpm->newNotesPos = mpm->notes[i].transform.position;
+
 	mpm->notes[i].transform.position = mpm->oldNotesPos;
 	float* curNewTrans = glm::value_ptr(*mpm->notes[i].transform.CalculateTransformMatr());
 	memcpy(&mpm->notesTransformsFlattened[i * (int)16], curNewTrans, 64);
@@ -137,7 +141,6 @@ void UndoMousePickingMoving(void* _mpm) {
 	mpm->textAreaTransformsVBO.Bind();
 	glBufferSubData(GL_ARRAY_BUFFER, start * sizeof(float), sizeof(float) * arraySize, &mpm->notes[i].textArea.textTransformsFlattened[start]);
 	mpm->textAreaTransformsVBO.Unbind();
-
 }
 
 void RedoMousePickingMoving(void* _mpm) {
@@ -159,7 +162,7 @@ void RedoMousePickingMoving(void* _mpm) {
 	const int start = mpm->notes[i].textArea.flattenedTransformStartIndex;
 	const int end = mpm->notes[i].textArea.flattenedTransformEndIndex;
 
-	glm::vec3 offset = mpm->newTextAreaPos - mpm->oldTextAreaPos;
+	glm::vec3 offset = mpm->newTextAreaPos - mpm->notes[i].textArea.transform.position;
 	mpm->notes[i].textArea.transform.position = mpm->newTextAreaPos;
 	
 	Debug(mpm->oldTextAreaPos);
