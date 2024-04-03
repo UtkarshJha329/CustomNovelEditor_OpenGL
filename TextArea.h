@@ -54,7 +54,9 @@ public:
 	void FillGlobalTextArrays(std::vector<float>& values, glm::vec3 offset = glm::vec3(0.0f) , int start = -1, int end = -1) {
 
 		if (start != -1 && end != -1) {
-						
+
+			//std::cout << "HERE!!!" << std::endl;
+
 			for (int i = 0; i < glyphTrans.size(); i++)
 			{
 				glyphTrans[i].position += offset;
@@ -71,7 +73,8 @@ public:
 
 		}
 		else {
-
+			glyphTrans.clear();
+			std::cout << "HERE INSTEAD" << std::endl;
 			auto glyphsMap = reader->getGlyphs();
 			float curWidth = 0;
 			float curHeight = 0;

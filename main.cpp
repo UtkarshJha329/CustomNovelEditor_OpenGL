@@ -1,6 +1,7 @@
-#include <iostream>
+#include <filesystem>
 #include <cstdlib>
 #include <vector>
+#include <iostream>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -21,7 +22,7 @@
 
 #include "BMFontReader.h"
 
-#include <filesystem>
+#include "UndoRedo.h"
 
 
 #define MAIN_WINDOW_WIDTH 800																						// Width of Main Window
@@ -39,7 +40,7 @@ std::vector<float> TextArea::isUI;
 int TextArea::totalGlyphs;
 int TextArea::totalTextAreas;
 
-int NUM_NOTES = 100;
+int NUM_NOTES = 5;
 int NUM_UI_PANELS = 5;
 
 // Vertices coordinates
@@ -86,6 +87,8 @@ float mouseSensitivity = 100.0f;
 int lastSelectedUI = -1;
 int lastSelectedEntity = -1;
 
+bool recordedMovement = false;
+
 std::vector<bool> resetText(NUM_NOTES);
 
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
@@ -108,9 +111,12 @@ void ButtonClickTest(void* a) {
 }
 
 BMFontReader* TextArea::reader;
+bool z = false;
 
 int main()
 {
+	UndoRedo undoredo;
+
 	BMFontReader reader("./fonts/TestFontDF.fnt");
 	reader.read();
 
@@ -185,7 +191,7 @@ int main()
 
 	Shader notesShaderProgram("default.vert", "default.frag");
 
-	std::vector<float> transformsFlattened(NUM_NOTES * 16);
+	std::vector<float> notesTransformsFlattened(NUM_NOTES * 16);
 	srand((unsigned int)time(0));
 	std::vector<Note> notes(NUM_NOTES);
 	for (int i = 0; i < NUM_NOTES; i++)
@@ -198,8 +204,8 @@ int main()
 		notes[i].transform.position = glm::vec3(x, y, z);
 		notes[i].transform.position.x = (notes[i].transform.position.x - 0.5f) * 2.0f;
 		notes[i].transform.position.y = (notes[i].transform.position.y - 0.5f) * 2.0f;
-		notes[i].transform.position.x *= 10.0f;
-		notes[i].transform.position.y *= 10.0f;
+		notes[i].transform.position.x *= 5.0f;
+		notes[i].transform.position.y *= 5.0f;
 
 		notes[i].transform.scale = glm::vec3(notes[i].width, notes[i].height, 1.0f);
 
@@ -207,7 +213,7 @@ int main()
 
 		std::vector<float> values;
 
-		memcpy(&transformsFlattened[i * (int)16], head, 64);
+		memcpy(&notesTransformsFlattened[i * (int)16], head, 64);
 		notes[i].textArea.transform = notes[i].transform;
 		notes[i].textArea.transform.position -= glm::vec3(notes[i].width, -notes[i].height, 0.0f);
 		notes[i].textArea.width = notes[i].width;
@@ -225,8 +231,8 @@ int main()
 
 	VBO notesVBO(vertices, sizeof(vertices), GL_STATIC_DRAW);
 	//VBO notesTransformsVBO(offsets.data(), offsets.size());
-	VBO notesTransformsVBO(transformsFlattened.data(), sizeof(float) * transformsFlattened.size(), GL_DYNAMIC_DRAW);
-	//std::cout << transformsFlattened.size() / 16 << std::endl;
+	VBO notesTransformsVBO(notesTransformsFlattened.data(), sizeof(float) * notesTransformsFlattened.size(), GL_DYNAMIC_DRAW);
+	//std::cout << notesTransformsFlattened.size() / 16 << std::endl;
 	notesTransformsVBO.Bind();
 	
 	EBO notesEBO(indices, sizeof(indices));
@@ -347,6 +353,21 @@ int main()
 			Input::timeRemainingForDoubleClick -= deltaTime;
 		}
 
+
+		if (Input::KeyHeld(window, KeyCode::LEFT_CTRL) && glfwGetKey(window, GLFW_KEY_Z) && !z) {
+			//Debug_Log("DID UNDO.");
+			undoredo.Undo();
+			z = true;
+		}
+		else if (Input::KeyHeld(window, KeyCode::LEFT_CTRL) && glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
+			//Debug_Log("DID UNDO.");
+			//undoredo.Redo();
+		}
+
+		if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_RELEASE) {
+			z = false;
+		}
+
 		/*if(Input::leftMouseButtonHeld)
 		{
 			Debug_Log("LEFT MOUSE HELD DOWN." << lhd);
@@ -436,6 +457,7 @@ int main()
 		}
 		else if (Input::doubleClicked && lastSelectedEntity != -1) {
 			lastSelectedEntity = -1;
+			recordedMovement = false;
 			//resetText = true;
 		}
 
@@ -498,9 +520,10 @@ int main()
 			point.z = pointOnPlane.z;
 
 			int i = lastSelectedEntity - NUM_UI_PANELS;
+			glm::vec3 oldNotesPos = notes[i].transform.position;
 			notes[i].transform.position = glm::vec3(point);
 			float* curNewTrans = glm::value_ptr(*notes[i].transform.CalculateTransformMatr());
-			memcpy(&transformsFlattened[i * (int)16], curNewTrans, 64);
+			memcpy(&notesTransformsFlattened[i * (int)16], curNewTrans, 64);
 
 			/*float newTrans[16];
 			memcpy(&newTrans[0], curNewTrans, 64);*/
@@ -513,12 +536,11 @@ int main()
 			const int end = notes[i].textArea.flattenedTransformEndIndex;
 			std::vector<float> values;
 
-			glm::vec3 oldPos = notes[i].textArea.transform.position;
+			glm::vec3 oldTextAreaPos = notes[i].textArea.transform.position;
 			notes[i].textArea.transform.position = point;
 
 
-
-			glm::vec3 offset = point - oldPos;
+			glm::vec3 offset = point - oldTextAreaPos;
 			if (glm::length(offset) > 0.1f && resetText[i]) {
 				offset -= glm::vec3(notes[i].textArea.width, -notes[i].textArea.height, 0.0f);
 				resetText[i] = false;
@@ -526,9 +548,36 @@ int main()
 			
 			notes[i].textArea.FillGlobalTextArrays(values, offset, start, end);
 
+			const float arraySize = notes[i].textArea.glyphTrans.size() * 16;
+			
 			TextArea::textTransformsVBO.Bind();
-			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * TextArea::textTransformsFlattened.size(), TextArea::textTransformsFlattened.data());
+			glBufferSubData(GL_ARRAY_BUFFER, start * sizeof(float), sizeof(float)* arraySize, &notes[i].textArea.textTransformsFlattened[start]);
 			TextArea::textTransformsVBO.Unbind();
+
+			if (!recordedMovement) {
+				MousePickingMoving* mpm = new MousePickingMoving{
+						oldNotesPos,
+						oldTextAreaPos,
+						lastSelectedEntity - NUM_UI_PANELS,
+						notes,
+						notesTransformsFlattened,
+						notesTransformsVBO,
+						TextArea::textTransformsVBO,
+						offset
+				};
+
+				ActionFunc notesMovindAF;
+				notesMovindAF.actionType = Action::ChangedNotePosition;
+				void* a = (void*)mpm;
+				notesMovindAF.undoFunction = UndoMousePickingMoving;
+
+				ActionArgs aa{
+					a
+				};
+
+				undoredo.AddAction(notesMovindAF, aa);
+				recordedMovement = true;
+			}
 		}
 
 		TextArea::textShader->Activate();
@@ -562,6 +611,8 @@ int main()
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
+
+		Input::ResetKeys();
 
 		frame++;
 

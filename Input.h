@@ -3,6 +3,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <iostream>
 #include <unordered_map>
 
 enum class KeyCode {
@@ -66,11 +67,19 @@ public:
 	}
 
 	static bool KeyDown(GLFWwindow* gameWindow, KeyCode key) {
+		//std::cout << keyDown[key] << std::endl;
 		return keyDown[key];
 	}
 
 	static bool KeyHeld(GLFWwindow* gameWindow, KeyCode key) {
 		return (glfwGetKey(gameWindow, (int)key) == GLFW_PRESS);
+	}
+
+	static void ResetKeys() {
+		for (unsigned int i = 0; i < Input::numKeyCodes; i++)
+		{
+			Input::keyDown[Input::keyCodesVec[i]] = false;
+		}
 	}
 	
 	static void keyboard_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
