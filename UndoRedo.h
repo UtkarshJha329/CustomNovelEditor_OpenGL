@@ -12,7 +12,6 @@ bool once = true;
 enum class Action {
 
 	ChangedNotePosition,
-	ChangedCameraPosition,
 	SelectedEntity
 
 };
@@ -46,7 +45,7 @@ public:
 			}
 
 		}
-		std::cout << "ADDED NEW UNDO MOVE." << std::endl;
+		//std::cout << "ADDED NEW UNDO MOVE." << std::endl;
 		actions.push_back(actionFunc);
 		actionArgs.push_back(_args);
 		curAction++;
@@ -54,11 +53,11 @@ public:
 
 	static void Undo() {
 
-		std::cout << "Outside UNDO: " << curAction + 1 << ", " << actions.size() << std::endl;
+		//std::cout << "Outside UNDO: " << curAction + 1 << ", " << actions.size() << std::endl;
 		if (curAction >= 0) {
 			if (curAction < actions.size()) {
 				actions[curAction].undoFunction(actionArgs[curAction].args);
-				std::cout << "Undo: " << curAction << ", " << actions.size() << std::endl;
+				//std::cout << "Undo: " << curAction << ", " << actions.size() << std::endl;
 				curAction--;
 			}
 		}
@@ -67,10 +66,10 @@ public:
 	}
 
 	static void Redo() {
-		std::cout << "Outside REDO: " << curAction + 1 << ", " << actions.size() << std::endl;
+		//std::cout << "Outside REDO: " << curAction + 1 << ", " << actions.size() << std::endl;
 		if (curAction + 1 < actions.size()) {
 			actions[curAction + 1].redoFunction(actionArgs[curAction + 1].args);
-			std::cout << "Redo: " << curAction << ", " << actions.size() << std::endl;
+			//std::cout << "Redo: " << curAction << ", " << actions.size() << std::endl;
 			curAction++;
 		}
 	}
@@ -98,7 +97,6 @@ struct MousePickingMoving {
 	VBO& notesTransformsVBO;
 	VBO& textAreaTransformsVBO;
 	glm::vec3 offset;
-	std::vector<bool>& resetPos;
 
 };
 
@@ -115,9 +113,6 @@ void UndoMousePickingMoving(void* _mpm) {
 	float* curNewTrans = glm::value_ptr(*mpm->notes[i].transform.CalculateTransformMatr());
 	memcpy(&mpm->notesTransformsFlattened[i * (int)16], curNewTrans, 64);
 
-	/*float newTrans[16];
-	memcpy(&newTrans[0], curNewTrans, 64);*/
-
 	mpm->notesTransformsVBO.Bind();
 	glBufferSubData(GL_ARRAY_BUFFER, i * 16 * sizeof(float), sizeof(float) * 16, curNewTrans);
 	mpm->notesTransformsVBO.Unbind();
@@ -129,10 +124,6 @@ void UndoMousePickingMoving(void* _mpm) {
 	glm::vec3 offset = mpm->oldTextAreaPos - mpm->notes[i].textArea.transform.position;
 	mpm->notes[i].textArea.transform.position = mpm->oldTextAreaPos;
 
-	if(!mpm->resetPos[i]) {
-		//offset += glm::vec3(mpm->notes[i].textArea.width, -mpm->notes[i].textArea.height, 0.0f);
-		mpm->resetPos[i] = true;
-	}
 	std::vector<float> values;
 	mpm->notes[i].textArea.FillGlobalTextArrays(values, offset, start, end);
 
@@ -164,14 +155,7 @@ void RedoMousePickingMoving(void* _mpm) {
 
 	glm::vec3 offset = mpm->newTextAreaPos - mpm->notes[i].textArea.transform.position;
 	mpm->notes[i].textArea.transform.position = mpm->newTextAreaPos;
-	
-	Debug(mpm->oldTextAreaPos);
-	Debug(mpm->newTextAreaPos);
 
-	if (once) {
-		//offset += glm::vec3(mpm->notes[i].textArea.width, -mpm->notes[i].textArea.height, 0.0f);
-		once = false;
-	}
 	std::vector<float> values;
 	mpm->notes[i].textArea.FillGlobalTextArrays(values, offset, start, end);
 

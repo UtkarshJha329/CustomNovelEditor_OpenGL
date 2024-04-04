@@ -3,15 +3,19 @@ layout (location = 0) in vec3 aPos;
 layout (location = 1) in mat4 aTransform;
 layout (location = 5) in mat4 aTexCoords;
 layout (location = 9) in float aUI;
+layout (location = 10) in float visible;
 
 out vec2 oTexCoords;
 out vec3 color;
+out float isVisible;
 
 uniform mat4 perspectiveProj;
 uniform mat4 cameraTrans;
 
 void main()
 {
+	isVisible = visible;
+
 	if(aUI == 0.0f){
 		vec4 pos = perspectiveProj * inverse(cameraTrans) * aTransform * vec4(aPos, 1.0f);
 		gl_Position = pos;

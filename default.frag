@@ -1,6 +1,7 @@
 #version 330 core
 
 in vec3 color;
+in float isVisible;
 in float instance_ID;
 
 uniform float uiEntitiesCount;
@@ -13,7 +14,9 @@ layout (location = 2) out int thisEntityID;
 
 void main()
 {
-   
+   	if(isVisible == 0.0f)
+		discard;
+
    //FragColor = vec4(abs(color), 1.0f);
 
    if(lastSelectedEntity == int(instance_ID) + int(uiEntitiesCount))

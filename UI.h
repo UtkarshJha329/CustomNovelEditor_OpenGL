@@ -93,7 +93,7 @@ public:
 
 	virtual void OnClick(bool leftClick, bool rightClick
 		, std::function<void(void*)> onClick_callback_func, void* args) override {
-		std::cout << "Clicking : " << entityID << std::endl;
+		//std::cout << "Clicking : " << entityID << std::endl;
 		onClick_callback_func(args);
 	}
 

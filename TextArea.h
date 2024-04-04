@@ -45,11 +45,29 @@ public:
 	static std::vector<float> textTransformsFlattened;	
 	static std::vector<float> texCoords;
 	static std::vector<float> isUI;
+	
+	static std::vector<float> textIsVisible;
+	inline static std::vector<float> individualLengths;
 	static int totalGlyphs;
 	float textCursor = 0.0f;
 
 	int flattenedTransformStartIndex = 0;
 	int flattenedTransformEndIndex = 0;
+
+	void SetVisibility(int start = 0,  float visibility = 1.0f) {
+		
+		float startLocation = 0.0f;
+		for (int i = 0; i < start; i++)
+		{
+			startLocation += individualLengths[i];
+			//std::cout << startLocation << ", " << individualLengths[i] << std::endl;
+		}
+		for (int i = 0; i < glyphTrans.size(); i++)
+		{
+			textIsVisible[startLocation + i] = visibility;
+		}
+		//std::cout << start * 126 << std::endl;
+	}
 
 	void FillGlobalTextArrays(std::vector<float>& values, glm::vec3 offset = glm::vec3(0.0f) , int start = -1, int end = -1) {
 
@@ -62,6 +80,7 @@ public:
 				glyphTrans[i].position += offset;
 
 				float* head = glm::value_ptr(*glyphTrans[i].CalculateTransformMatr());
+				//textIsVisible[start + i] = visibility;
 
 				for (int j = 0; j < 16; j++)
 				{
@@ -74,6 +93,7 @@ public:
 		}
 		else {
 			glyphTrans.clear();
+
 			//std::cout << "HERE INSTEAD" << std::endl;
 			auto glyphsMap = reader->getGlyphs();
 			float curWidth = 0;
@@ -91,6 +111,8 @@ public:
 
 			for (int i = 0; i < sampleString.length(); i++)
 			{
+				textIsVisible.push_back(1.0f);
+
 				totalGlyphs++;
 				auto curGlyph = glyphsMap[sampleString[i]];
 				//float yOffset = -(curGlyph.height - curGlyph.yOffset) / (2 * 512.0f);
@@ -180,6 +202,7 @@ public:
 				texCoords.push_back((512.0f - curGlyph.y) / 512.0f);
 				texCoords.push_back(0.0f);
 				texCoords.push_back(0.0f);
+
 			}
 
 		}
@@ -190,18 +213,20 @@ public:
 	inline static VBO textIsUIVBO;
 	inline static VBO textTextureCoordsVBO;
 	inline static VBO textTransformsVBO;
+	inline static VBO textIsVisibleVBO;
 	inline static EBO textEBO;
 
-	static void BindVAOsVBOsEBOs(float* textAreavertices, unsigned int* textAreaindices) {
+	static void BindVAOsVBOsEBOs(float* textAreavertices, unsigned int* textAreaindices, unsigned int EXTRA_ALLOCATION) {
 
 		textVAO.Init();
 
 		//Text RENDERING UI
 		textVAO.Bind();
 		textVBO.Init(textAreavertices, sizeof(float) * 12, GL_STATIC_DRAW);
-		textIsUIVBO.Init(TextArea::isUI.data(), sizeof(float) * TextArea::isUI.size(), GL_STATIC_DRAW);
-		textTextureCoordsVBO.Init(TextArea::texCoords.data(), sizeof(float) * TextArea::texCoords.size(), GL_DYNAMIC_DRAW);
-		textTransformsVBO.Init(TextArea::textTransformsFlattened.data(), sizeof(float) * TextArea::textTransformsFlattened.size(), GL_DYNAMIC_DRAW);
+		textIsUIVBO.Init(TextArea::isUI.data(), sizeof(float) * (TextArea::isUI.size() + EXTRA_ALLOCATION), GL_STATIC_DRAW);
+		textTextureCoordsVBO.Init(TextArea::texCoords.data(), sizeof(float) * (TextArea::texCoords.size() + EXTRA_ALLOCATION), GL_DYNAMIC_DRAW);
+		textTransformsVBO.Init(TextArea::textTransformsFlattened.data(), sizeof(float) * (TextArea::textTransformsFlattened.size() + EXTRA_ALLOCATION * 16), GL_DYNAMIC_DRAW);
+		textIsVisibleVBO.Init(TextArea::textIsVisible.data(), sizeof(float) * (TextArea::textIsVisible.size() + EXTRA_ALLOCATION), GL_DYNAMIC_DRAW);
 		textTransformsVBO.Bind();
 
 		textEBO.Init(textAreaindices, sizeof(unsigned int) * 6);
@@ -209,7 +234,9 @@ public:
 		textVAO.LinkTransformAttrib(textTransformsVBO, 1);
 		textVAO.LinkTransformAttrib(textTextureCoordsVBO, 5);
 		textVAO.LinkAttrib(textIsUIVBO, 9, 1, GL_FLOAT, sizeof(float), (void*)0);
+		textVAO.LinkAttrib(textIsVisibleVBO, 10, 1, GL_FLOAT, sizeof(float), (void*)0);
 		glVertexAttribDivisor(9, 1);
+		glVertexAttribDivisor(10, 1);
 
 
 		textVAO.Unbind();

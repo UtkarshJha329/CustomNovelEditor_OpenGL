@@ -6,6 +6,7 @@ layout (location = 2) out int thisEntityID;
 
 in vec2 oTexCoords;
 in vec3 color;
+in float isVisible;
 
 uniform sampler2D textureAtlas;
 
@@ -14,6 +15,9 @@ const float edge = 0.1;
 
 void main()
 {
+	if(isVisible == 0.0f)
+		discard;
+
 	float distance = 1.0 - texture(textureAtlas, oTexCoords).a;
 	float alpha = 1.0 - smoothstep(width, width + edge, distance);
 
