@@ -60,6 +60,7 @@ public:
 		for (int i = 0; i < start; i++)
 		{
 			startLocation += individualLengths[i];
+			//std::cout << "StartLocation: " << startLocation << ", IndividualLengths: " << individualLengths[i] << std::endl;
 		}
 
 		for (int i = 0; i < glyphTrans.size(); i++)
@@ -73,6 +74,8 @@ public:
 				textIsVisible[startLocation + i] = 0.0f;
 			}
 		}
+		//std::cout << "(START - NUMIP_PANELS)* 87 + NUM_UI_PANELS * 6: " << (start - 5) * 87 + 30 << std::endl;
+
 
 		textIsVisibleVBO.Bind();
 		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * textIsVisible.size(), &textIsVisible[0]);
@@ -134,9 +137,12 @@ public:
 				xOffset = 0.02f;
 			}
 
+			//std::cout << "NEW SAMPLE STRING READING" << std::endl;
+
 			for (int i = 0; i < sampleString.length(); i++)
 			{
 				textIsVisible.push_back(1.0f);
+				std::cout << textIsVisible.size() << std::endl;
 
 				totalGlyphs++;
 				auto curGlyph = glyphsMap[sampleString[i]];
@@ -229,6 +235,7 @@ public:
 				texCoords.push_back(0.0f);
 
 			}
+			//std::cout << " Individual Length: " << individualLengths[individualLengths.size() - 1] << std::endl;
 
 		}
 	}

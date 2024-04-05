@@ -144,17 +144,17 @@ void CreateNewNote(void* args) {
 		NUM_NOTES++;
 		i = NUM_NOTES - 1;
 
-		std::vector<float> values;
+		//std::vector<float> values;
 
 		//a->notes[i].textArea.individualLengths.push_back(a->notes[i].textArea.sampleString.length());
-		a->notes[i].textArea.IsUI = 0.0f;
+		//a->notes[i].textArea.IsUI = 0.0f;
 		//Debug_Log(a->notes[i].textArea.texCoords.size());
-		a->notes[i].textArea.FillGlobalTextArrays(values);
+		//a->notes[i].textArea.FillGlobalTextArrays(values);
 
-		resetText.push_back(true);
-		a->visible.push_back(1.0f);
+		//resetText.push_back(true);
+		//a->visible.push_back(1.0f);
 
-		a->notes[i].textArea.BindVAOsVBOsEBOs(vertices, indices, EXTRA_BUFFER_ALLOCATION);
+		//a->notes[i].textArea.BindVAOsVBOsEBOs(vertices, indices, EXTRA_BUFFER_ALLOCATION);
 
 	}
 	else {
@@ -189,7 +189,7 @@ void CreateNewNote(void* args) {
 	a->notes[i].textArea.transform = a->notes[i].transform;
 	a->notes[i].textArea.width = a->notes[i].width;
 	a->notes[i].textArea.height = a->notes[i].height;
-	a->notes[i].textArea.sampleString = "To dispriz'd coil, and be: to othe mind by a life, and love, and mome of somenterprises calamity opposing end swear, to dream:";
+	a->notes[i].textArea.sampleString = "To dispriz'd coil, and be: to othe mind by a life, and love, and mome of somenterprises";
 	
 	//Debug(a->notes[i].textArea.transform.position);
 	//Debug_Log(a->notes[i].textArea.texCoords.size());
@@ -401,7 +401,8 @@ int main()
 		//notes[i].textArea.transform.position += glm::vec3(-notes[i].width, notes[i].height, 0.0f);
 		notes[i].textArea.width = notes[i].width;
 		notes[i].textArea.height = notes[i].height;
-		notes[i].textArea.sampleString = "To dispriz'd coil, and be: to othe mind by a life, and love, and mome of somenterprises calamity opposing end swear, to dream:";
+		//notes[i].textArea.sampleString = "To dispriz'd coil, and be: to othe mind by a life, and love, and mome of somenterprises calamity opposing end swear, to dream:";
+		notes[i].textArea.sampleString = "To dispriz'd coil, and be: to othe mind by a life, and love, and mome of somenterprises";
 		notes[i].textArea.individualLengths.push_back(notes[i].textArea.sampleString.length());
 		notes[i].textArea.IsUI = 0.0f;
 		notes[i].textArea.FillGlobalTextArrays(values);
