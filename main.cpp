@@ -189,10 +189,13 @@ void DeleteNote(void* args) {
 	float* visibility = new float(0.0f);
 	int i = a->lastSelectedEntityDelete - NUM_UI_PANELS;
 	a->notesVisible[i] = 0.0f;
-	Debug_Log("Deleted Note: " << i);
+	//Debug_Log("Deleted Note: " << i);
+
+	//Debug_Log("LastSelectedEntityDelete: " << lastSelectedEntityDelete << ", NumIndividualLengths: " << TextArea::individualLengths.size());
+	a->notes[i].textArea.SetVisibility(lastSelectedEntityDelete, 0.0f);
+	
 	a->lastSelectedEntityDelete = -1.0f;
 
-	a->notes[i].textArea.SetVisibility(i, 0.0f);
 
 	a->notesVisibilityVBO.Bind();
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * a->notesVisible.size(), a->notesVisible.data());
@@ -283,6 +286,7 @@ int main()
 		buttons[i].textArea.width = 0.1f;
 		buttons[i].textArea.height = 0.1f;
 		buttons[i].textArea.sampleString = "BUTTON";
+		buttons[i].textArea.individualLengths.push_back(buttons[i].textArea.sampleString.length());
 		buttons[i].textArea.IsUI = 1.0f;
 		buttons[i].textArea.FillGlobalTextArrays(values);
 	}
