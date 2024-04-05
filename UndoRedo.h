@@ -168,6 +168,7 @@ void RedoMousePickingMoving(void* _mpm) {
 struct ChangeVisibility {
 	std::vector<Note>& notes;
 	std::vector<float>& notesVisible;
+	std::vector<int>& deletedNotes;
 	VBO& notesVisibilityVBO;
 	int entityToChange;
 	int num_ui_panels;
@@ -186,6 +187,9 @@ void ChangeNoteVisibility(void* _cnv) {
 	}
 	else {
 		cnv->notesVisible[cnv->entityToChange - cnv->num_ui_panels] = 1.0f;
+		if (cnv->deletedNotes.size() > 0) {
+			cnv->deletedNotes.pop_back();
+		}
 	}
 	//Debug_Log("Deleted Note: " << i);
 

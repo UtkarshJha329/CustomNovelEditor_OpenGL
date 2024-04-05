@@ -146,7 +146,7 @@ void CreateNewNote(void* args) {
 
 		std::vector<float> values;
 
-		a->notes[i].textArea.individualLengths.push_back(a->notes[i].textArea.sampleString.length());
+		//a->notes[i].textArea.individualLengths.push_back(a->notes[i].textArea.sampleString.length());
 		a->notes[i].textArea.IsUI = 0.0f;
 		//Debug_Log(a->notes[i].textArea.texCoords.size());
 		a->notes[i].textArea.FillGlobalTextArrays(values);
@@ -214,6 +214,7 @@ void CreateNewNote(void* args) {
 	ChangeVisibility* cnv = new ChangeVisibility{
 		a->notes,
 		a->visible,
+		deletedNotesEntities,
 		a->notesVisibilityVBO,
 		i + NUM_UI_PANELS,
 		NUM_UI_PANELS
@@ -271,6 +272,7 @@ void DeleteNote(void* args) {
 	ChangeVisibility* cnv = new ChangeVisibility{
 		a->notes,
 		a->notesVisible,
+		deletedNotesEntities,
 		a->notesVisibilityVBO,
 		i + NUM_UI_PANELS,
 		NUM_UI_PANELS
