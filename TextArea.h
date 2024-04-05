@@ -54,6 +54,31 @@ public:
 	int flattenedTransformStartIndex = 0;
 	int flattenedTransformEndIndex = 0;
 
+	void FlipVisibility(int start) {
+
+		float startLocation = 0.0f;
+		for (int i = 0; i < start; i++)
+		{
+			startLocation += individualLengths[i];
+		}
+
+		for (int i = 0; i < glyphTrans.size(); i++)
+		{
+			int curVisibility = textIsVisible[startLocation + i];
+
+			if (curVisibility == 0.0f) {
+				textIsVisible[startLocation + i] = 1.0f;
+			}
+			else {
+				textIsVisible[startLocation + i] = 0.0f;
+			}
+		}
+
+		textIsVisibleVBO.Bind();
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * textIsVisible.size(), &textIsVisible[0]);
+		textIsVisibleVBO.Unbind();
+	}
+
 	void SetVisibility(int start = 0,  float visibility = 1.0f) {
 		
 		float startLocation = 0.0f;

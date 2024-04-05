@@ -109,6 +109,12 @@
     <ClInclude Include="Note.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="UndoRedo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NoteManipulation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="pogcat.jpg">

@@ -120,8 +120,6 @@ BMFontReader* TextArea::reader;
 bool z = false;
 bool y = false;
 
-bool hide = false;
-
 void MoveNotes(std::vector<Note>& notes, std::vector<float>& notesTransformsFlattened
 	, glm::vec3 point, VBO& notesTransformsVBO, VBO& notesVisibilityVBO, int i, UndoRedo& undoredo);
 
@@ -129,6 +127,7 @@ struct CreateNewNodeButtonStruct {
 	std::vector<Note>& notes;
 	std::vector<float>& notesTransformsFlattened;
 	std::vector<float>& visible;
+	VBO& notesVisibilityVBO;
 	int& lastSelectedEntity;
 };
 
@@ -211,6 +210,25 @@ void CreateNewNote(void* args) {
 		a->notes[i].textArea.BindVAOsVBOsEBOs(vertices, indices, EXTRA_BUFFER_ALLOCATION);
 
 	}
+
+	ChangeVisibility* cnv = new ChangeVisibility{
+		a->notes,
+		a->visible,
+		a->notesVisibilityVBO,
+		i + NUM_UI_PANELS,
+		NUM_UI_PANELS
+	};
+
+	ActionFunc af;
+	af.actionType = Action::UndoCreationOrDeletionOfNote;
+	af.redoFunction = ChangeNoteVisibility;
+	af.undoFunction = ChangeNoteVisibility;
+
+	ActionArgs aa = {
+		cnv
+	};
+
+	UndoRedo::AddAction(af, aa);
 }
 
 struct DeleteNoteInfo {
@@ -249,6 +267,25 @@ void DeleteNote(void* args) {
 	a->notes[i].textArea.textIsVisibleVBO.Bind();
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * a->notes[i].textArea.textIsVisible.size(), &a->notes[i].textArea.textIsVisible[0]);
 	a->notes[i].textArea.textIsVisibleVBO.Unbind();
+
+	ChangeVisibility* cnv = new ChangeVisibility{
+		a->notes,
+		a->notesVisible,
+		a->notesVisibilityVBO,
+		i + NUM_UI_PANELS,
+		NUM_UI_PANELS
+	};
+
+	ActionFunc af;
+	af.actionType = Action::UndoCreationOrDeletionOfNote;
+	af.redoFunction = ChangeNoteVisibility;
+	af.undoFunction = ChangeNoteVisibility;
+
+	ActionArgs aa = {
+		cnv
+	};
+
+	UndoRedo::AddAction(af, aa);
 
 }
 
@@ -540,10 +577,6 @@ int main()
 			y = false;
 		}
 
-		if (glfwGetKey(window, GLFW_KEY_DELETE) == GLFW_RELEASE) {
-			hide = false;
-		}
-
 		/*if(Input::leftMouseButtonHeld)
 		{
 			Debug_Log("LEFT MOUSE HELD DOWN." << lhd);
@@ -645,7 +678,7 @@ int main()
 			//resetText = true;
 		}
 
-		if (Input::leftMouseButtonPressed || (glfwGetKey(window, GLFW_KEY_DELETE) && !hide)) {
+		if (Input::leftMouseButtonPressed) {
 			int outValue = 0;
 			glReadBuffer(GL_COLOR_ATTACHMENT2);
 			glReadPixels(Input::mouseX, MAIN_WINDOW_HEIGHT - Input::mouseY, 1, 1, GL_RED_INTEGER, GL_INT, &outValue);
@@ -654,7 +687,6 @@ int main()
 				lastSelectedEntityDelete = outValue;
 				Debug_Log("Deleting: " << lastSelectedEntityDelete);
 			}
-			hide = true;
 		}
 
 		/*if (lastSelectedEntityDelete != -1) {
@@ -683,7 +715,7 @@ int main()
 				
 				//ui_manager.ManageUI(mp, ButtonClickTest, &bcs, lastSelectedUI);
 				if (lastSelectedUI > 0) {
-					CreateNewNodeButtonStruct cnnbs = { notes, notesTransformsFlattened, notesVisible, lastSelectedEntity };
+					CreateNewNodeButtonStruct cnnbs = { notes, notesTransformsFlattened, notesVisible, notesVisibilityVBO, lastSelectedEntity };
 					ui_manager.ManageUI(mp, CreateNewNote, &cnnbs, lastSelectedUI);
 				}
 				else if(lastSelectedEntityDelete > -1){

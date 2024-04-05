@@ -181,6 +181,7 @@
     <ClInclude Include="FTPFontReader.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="Note.h" />
+    <ClInclude Include="NoteManipulation.h" />
     <ClInclude Include="ShaderClass.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="TextArea.h" />

@@ -7,12 +7,10 @@
 #include "Transform.h"
 #include "TextArea.h"
 
-bool once = true;
-
 enum class Action {
 
 	ChangedNotePosition,
-	SelectedEntity
+	UndoCreationOrDeletionOfNote
 
 };
 
@@ -35,7 +33,7 @@ class UndoRedo {
 
 public:
 
-	static void AddAction(const ActionFunc& actionFunc, const ActionArgs _args) {
+	static void AddAction(const ActionFunc actionFunc, const ActionArgs _args) {
 
 		if (curAction + 1 < actions.size()) {
 
@@ -164,5 +162,35 @@ void RedoMousePickingMoving(void* _mpm) {
 	mpm->textAreaTransformsVBO.Bind();
 	glBufferSubData(GL_ARRAY_BUFFER, start * sizeof(float), sizeof(float) * arraySize, &mpm->notes[i].textArea.textTransformsFlattened[start]);
 	mpm->textAreaTransformsVBO.Unbind();
+
+}
+
+struct ChangeVisibility {
+	std::vector<Note>& notes;
+	std::vector<float>& notesVisible;
+	VBO& notesVisibilityVBO;
+	int entityToChange;
+	int num_ui_panels;
+};
+
+void ChangeNoteVisibility(void* _cnv) {
+
+	ChangeVisibility* cnv = (ChangeVisibility*)_cnv;
+
+	cnv->notes[cnv->entityToChange - cnv->num_ui_panels].textArea.FlipVisibility(cnv->entityToChange);
+
+	float curValue = cnv->notesVisible[cnv->entityToChange - cnv->num_ui_panels];
+	if(curValue == 1.0f)
+	{
+		cnv->notesVisible[cnv->entityToChange - cnv->num_ui_panels] = 0.0f;
+	}
+	else {
+		cnv->notesVisible[cnv->entityToChange - cnv->num_ui_panels] = 1.0f;
+	}
+	//Debug_Log("Deleted Note: " << i);
+
+	cnv->notesVisibilityVBO.Bind();
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * cnv->notesVisible.size(), cnv->notesVisible.data());
+	cnv->notesVisibilityVBO.Unbind();
 
 }
