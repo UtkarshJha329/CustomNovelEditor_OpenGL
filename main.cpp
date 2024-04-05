@@ -135,11 +135,43 @@ struct CreateNewNodeButtonStruct {
 void CreateNewNote(void* args) {
 	CreateNewNodeButtonStruct* a = (CreateNewNodeButtonStruct*)args;
 
-	Note newNote;
-	a->notes.push_back(newNote);
-	NUM_NOTES++;
 
-	int i = NUM_NOTES - 1;
+	int i = -1;
+	bool newNote = deletedNotesEntities.size() == 0;
+
+	if (newNote) {
+		Note newNote;
+		a->notes.push_back(newNote);
+		NUM_NOTES++;
+		i = NUM_NOTES - 1;
+
+		std::vector<float> values;
+
+		a->notes[i].textArea.individualLengths.push_back(a->notes[i].textArea.sampleString.length());
+		a->notes[i].textArea.IsUI = 0.0f;
+		//Debug_Log(a->notes[i].textArea.texCoords.size());
+		a->notes[i].textArea.FillGlobalTextArrays(values);
+
+		resetText.push_back(true);
+		a->visible.push_back(1.0f);
+
+		a->notes[i].textArea.BindVAOsVBOsEBOs(vertices, indices, EXTRA_BUFFER_ALLOCATION);
+
+	}
+	else {
+		i = deletedNotesEntities[deletedNotesEntities.size() - 1];
+		deletedNotesEntities.pop_back();
+
+		//Debug_Log("Used old deleted node.");
+		a->notes[i].textArea.SetVisibility(i + NUM_UI_PANELS, 1.0f);
+
+		a->notes[i].textArea.textIsVisibleVBO.Bind();
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * a->notes[i].textArea.textIsVisible.size(), &a->notes[i].textArea.textIsVisible[0]);
+		a->notes[i].textArea.textIsVisibleVBO.Unbind();
+		a->visible[i] = 1.0f;
+
+	}
+
 	
 
 	a->notes[i].width = 1.0f;
@@ -154,27 +186,31 @@ void CreateNewNote(void* args) {
 
 	a->lastSelectedEntity = i + NUM_UI_PANELS;
 
-	std::vector<float> values;
 
 	a->notes[i].textArea.transform = a->notes[i].transform;
 	a->notes[i].textArea.width = a->notes[i].width;
 	a->notes[i].textArea.height = a->notes[i].height;
 	a->notes[i].textArea.sampleString = "To dispriz'd coil, and be: to othe mind by a life, and love, and mome of somenterprises calamity opposing end swear, to dream:";
-	a->notes[i].textArea.individualLengths.push_back(a->notes[i].textArea.sampleString.length());
-	a->notes[i].textArea.IsUI = 0.0f;
-	//Debug_Log(a->notes[i].textArea.texCoords.size());
-	a->notes[i].textArea.FillGlobalTextArrays(values);
 	
-	resetText.push_back(true);
-	a->visible.push_back(1.0f);
-
-
-	a->notes[i].textArea.BindVAOsVBOsEBOs(vertices, indices, EXTRA_BUFFER_ALLOCATION);
-
 	//Debug(a->notes[i].textArea.transform.position);
 	//Debug_Log(a->notes[i].textArea.texCoords.size());
 	
+	if (newNote) {
 
+		std::vector<float> values;
+
+		a->notes[i].textArea.individualLengths.push_back(a->notes[i].textArea.sampleString.length());
+		a->notes[i].textArea.IsUI = 0.0f;
+		//Debug_Log(a->notes[i].textArea.texCoords.size());
+		a->notes[i].textArea.FillGlobalTextArrays(values);
+
+		resetText.push_back(true);
+		a->visible.push_back(1.0f);
+
+
+		a->notes[i].textArea.BindVAOsVBOsEBOs(vertices, indices, EXTRA_BUFFER_ALLOCATION);
+
+	}
 }
 
 struct DeleteNoteInfo {
@@ -191,9 +227,11 @@ void DeleteNote(void* args) {
 	a->notesVisible[i] = 0.0f;
 	//Debug_Log("Deleted Note: " << i);
 
-	//Debug_Log("LastSelectedEntityDelete: " << lastSelectedEntityDelete << ", NumIndividualLengths: " << TextArea::individualLengths.size());
+	Debug_Log("LastSelectedEntityDelete: " << lastSelectedEntityDelete << ", NumIndividualLengths: " << TextArea::individualLengths.size());
 	a->notes[i].textArea.SetVisibility(lastSelectedEntityDelete, 0.0f);
 	
+	deletedNotesEntities.push_back(i);
+
 	a->lastSelectedEntityDelete = -1.0f;
 
 

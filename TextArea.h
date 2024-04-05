@@ -60,13 +60,13 @@ public:
 		for (int i = 0; i < start; i++)
 		{
 			startLocation += individualLengths[i];
-			//std::cout << "StartLocation: " << startLocation << ", IndividualLengths" << individualLengths[i] << std::endl;
+			//std::cout << "StartLocation: " << startLocation << ", IndividualLengths: " << individualLengths[i] << std::endl;
 		}
 		for (int i = 0; i < glyphTrans.size(); i++)
 		{
 			textIsVisible[startLocation + i] = visibility;
 		}
-		//std::cout << "START * 126: " << start * 126 << std::endl;
+		//std::cout << "(START - NUMIP_PANELS)* 126 + NUM_UI_PANELS * 6: " << (start - 5) * 126 + 30 << std::endl;
 	}
 
 	void FillGlobalTextArrays(std::vector<float>& values, glm::vec3 offset = glm::vec3(0.0f) , int start = -1, int end = -1) {
