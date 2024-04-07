@@ -95,7 +95,7 @@ public:
 		//std::cout << sampleString.substr(0, individualLengths[noteIndex + 5]) << std::endl;
 
 		TextArea::textTextureCoordsVBO.Bind();
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * TextArea::texCoords.size(), TextArea::texCoords.data());
+		glBufferSubData(GL_ARRAY_BUFFER, sizeof(float) * currentLastGlyphIndex * 16, sizeof(float) * 16, &TextArea::texCoords[currentLastGlyphIndex * 16]);
 		TextArea::textTextureCoordsVBO.Unbind();
 	}
 
@@ -425,16 +425,18 @@ public:
 
 		}
 
+		//std::cout << start << ", " << currentIndex * 16 << std::endl;
+
 		TextArea::textTransformsVBO.Bind();
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * TextArea::textTransformsFlattened.size(), TextArea::textTransformsFlattened.data());
+		glBufferSubData(GL_ARRAY_BUFFER, sizeof(float) * currentIndex * 16, sizeof(float) * sampleString.length() * 16, &TextArea::textTransformsFlattened[currentIndex * 16]);
 		TextArea::textTransformsVBO.Unbind();
 
 		TextArea::textTextureCoordsVBO.Bind();
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * TextArea::texCoords.size(), TextArea::texCoords.data());
+		glBufferSubData(GL_ARRAY_BUFFER, sizeof(float) * currentIndex * 16, sizeof(float) * sampleString.length() * 16, &TextArea::texCoords[currentIndex * 16]);
 		TextArea::textTextureCoordsVBO.Unbind();
 
 		textIsVisibleVBO.Bind();
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * TextArea::textIsVisible.size(), TextArea::textIsVisible.data());
+		glBufferSubData(GL_ARRAY_BUFFER, sizeof(float) * currentIndex, sizeof(float) * sampleString.length(), &TextArea::textIsVisible[currentIndex]);
 		textIsVisibleVBO.Unbind();
 	}
 
