@@ -60,9 +60,9 @@ public:
 
 	void RemoveLastCharFromTextArea(int noteIndex) {
 
-		int currentLastGlyphIndex = (noteIndex + 5) * NUM_CHARS_IN_TEXTAREA + individualLengths[noteIndex + 5];
+		int currentLastGlyphIndex = (noteIndex + 5) * NUM_CHARS_IN_TEXTAREA + individualLengths[noteIndex + 5] - 1;
 
-		std::cout << noteIndex << " : " << currentLastGlyphIndex << std::endl;
+		//std::cout << noteIndex << " : " << currentLastGlyphIndex << std::endl;
 
 		auto glyphsMap = reader->getGlyphs();
 
@@ -89,7 +89,7 @@ public:
 		texCoords[currentLastGlyphIndex * 16 + 14] = (0.0f);
 		texCoords[currentLastGlyphIndex * 16 + 15] = (0.0f);
 
-		sampleString[individualLengths[noteIndex + 5]] = ' ';
+		sampleString[individualLengths[noteIndex + 5] - 1] = ' ';
 		individualLengths[noteIndex + 5]--;
 
 		//std::cout << sampleString.substr(0, individualLengths[noteIndex + 5]) << std::endl;
