@@ -385,30 +385,32 @@ public:
 			//	textTransformsFlattened[currentIndex + i * 16 + j] = (head[j]);
 			//}
 
-			memcpy(&textTransformsFlattened[currentIndex + i * 16], head, sizeof(float) * 16);
+			memcpy(&textTransformsFlattened[currentIndex * 16 + i * 16], head, sizeof(float) * 16);
 
 
 			glyphTrans.push_back(trans);
 			//std::cout << currentIndex + i * 16 << std::endl;
-			texCoords[currentIndex + i * 16 + 0] = (curGlyph.x / 512.0f);
-			texCoords[currentIndex + i * 16 + 1] = ((512.0f - (curGlyph.y + curGlyph.height)) / 512.0f);
-			texCoords[currentIndex + i * 16 + 2] = (0.0f);
-			texCoords[currentIndex + i * 16 + 3] = (0.0f);
-			texCoords[currentIndex + i * 16 + 4] = ((curGlyph.x + curGlyph.width) / 512.0f);
-			texCoords[currentIndex + i * 16 + 5] = ((512.0f - (curGlyph.y + curGlyph.height)) / 512.0f);
-			texCoords[currentIndex + i * 16 + 6] = (0.0f);
-			texCoords[currentIndex + i * 16 + 7] = (0.0f);
-			texCoords[currentIndex + i * 16 + 8] = ((curGlyph.x + curGlyph.width) / 512.0f);
-			texCoords[currentIndex + i * 16 + 9] = ((512.0f - (curGlyph.y)) / 512.0f);
-			texCoords[currentIndex + i * 16 + 10] = (0.0f);
-			texCoords[currentIndex + i * 16 + 11] = (0.0f);
-			texCoords[currentIndex + i * 16 + 12] = (curGlyph.x / 512.0f);
-			texCoords[currentIndex + i * 16 + 13] = ((512.0f - curGlyph.y) / 512.0f);
-			texCoords[currentIndex + i * 16 + 14] = (0.0f);
-			texCoords[currentIndex + i * 16 + 15] = (0.0f);
+			texCoords[currentIndex * 16 + i * 16 + 0] = (curGlyph.x / 512.0f);
+			texCoords[currentIndex * 16 + i * 16 + 1] = ((512.0f - (curGlyph.y + curGlyph.height)) / 512.0f);
+			texCoords[currentIndex * 16 + i * 16 + 2] = (0.0f);
+			texCoords[currentIndex * 16 + i * 16 + 3] = (0.0f);
+			texCoords[currentIndex * 16 + i * 16 + 4] = ((curGlyph.x + curGlyph.width) / 512.0f);
+			texCoords[currentIndex * 16 + i * 16 + 5] = ((512.0f - (curGlyph.y + curGlyph.height)) / 512.0f);
+			texCoords[currentIndex * 16 + i * 16 + 6] = (0.0f);
+			texCoords[currentIndex * 16 + i * 16 + 7] = (0.0f);
+			texCoords[currentIndex * 16 + i * 16 + 8] = ((curGlyph.x + curGlyph.width) / 512.0f);
+			texCoords[currentIndex * 16 + i * 16 + 9] = ((512.0f - (curGlyph.y)) / 512.0f);
+			texCoords[currentIndex * 16 + i * 16 + 10] = (0.0f);
+			texCoords[currentIndex * 16 + i * 16 + 11] = (0.0f);
+			texCoords[currentIndex * 16 + i * 16 + 12] = (curGlyph.x / 512.0f);
+			texCoords[currentIndex * 16 + i * 16 + 13] = ((512.0f - curGlyph.y) / 512.0f);
+			texCoords[currentIndex * 16 + i * 16 + 14] = (0.0f);
+			texCoords[currentIndex * 16 + i * 16 + 15] = (0.0f);
 
 
 		}
+
+		std::cout << "texcoords: " << texCoords.size() << std::endl;
 
 		std::cout << "TOTAL GLYPHS : " << totalGlyphs << std::endl;
 
