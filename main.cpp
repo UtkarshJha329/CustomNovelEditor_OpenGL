@@ -119,6 +119,7 @@ void ButtonClickTest(void* a) {
 BMFontReader* TextArea::reader;
 bool z = false;
 bool y = false;
+bool backspace = false;
 
 void MoveNotes(std::vector<Note>& notes, std::vector<float>& notesTransformsFlattened
 	, glm::vec3 point, VBO& notesTransformsVBO, VBO& notesVisibilityVBO, int i, UndoRedo& undoredo, bool allowRecording = true);
@@ -587,6 +588,10 @@ int main()
 			y = false;
 		}
 
+		if (glfwGetKey(window, GLFW_KEY_BACKSPACE) == GLFW_RELEASE) {
+			backspace = false;
+		}
+
 		/*if(Input::leftMouseButtonHeld)
 		{
 			Debug_Log("LEFT MOUSE HELD DOWN." << lhd);
@@ -640,13 +645,13 @@ int main()
 		}
 		else {
 			const float cameraSpeed = 2.5f * (float)deltaTime; // adjust accordingly
-			if (Input::KeyHeld(window, KeyCode::W))
+			if (Input::KeyHeld(window, KeyCode::UP_ARROW))
 				camera.trans.position += cameraSpeed * camera.trans.up;
-			if (Input::KeyHeld(window, KeyCode::S))
+			if (Input::KeyHeld(window, KeyCode::DOWN_ARROW))
 				camera.trans.position -= cameraSpeed * camera.trans.up;
-			if (Input::KeyHeld(window, KeyCode::A))
+			if (Input::KeyHeld(window, KeyCode::LEFT_ARRORW))
 				camera.trans.position -= cameraSpeed * camera.trans.right;
-			if (Input::KeyHeld(window, KeyCode::D))
+			if (Input::KeyHeld(window, KeyCode::RIGHT_ARROW))
 				camera.trans.position += cameraSpeed * camera.trans.right;
 
 		}
@@ -739,35 +744,24 @@ int main()
 		if (lastSelectedEntityDelete != -1) {
 
 			//std::cout << lastSelectedEntityDelete << std::endl;
+			int i = lastSelectedEntityDelete - NUM_UI_PANELS;
 
 			if (Input::typed) {
 
-				int i = lastSelectedEntityDelete - NUM_UI_PANELS;
-
-				notes[i].textArea.ChangeText("HELLO, NEW TEXT! IT IS WORKING FINE! WHY IS IT NOT WORKING!?", i);
+				std::string curChar = "";
+				curChar += Input::curTypedChar;
+				notes[i].textArea.ChangeText(curChar, i);
 				//MoveNotes(notes, notesTransformsFlattened, notes[i].transform.position - glm::vec3(0.1f), notesTransformsVBO, notesVisibilityVBO, i, undoredo, false);
 				Input::typed = false;
 
 				//std::cout << notes[i].textArea.sampleString << std::endl;
-				int currentIndex = (i + 5) * 400;
+			}
+			else if (glfwGetKey(window, GLFW_KEY_BACKSPACE) == GLFW_PRESS && !backspace) {
 
-				std::cout << currentIndex << std::endl;
-				for (int i = 0; i < 16; i++)
-				{
-					std::cout << "125 : " << TextArea::texCoords[currentIndex + 125 * 16 + i] << " : ";
-					std::cout << "185 : " << TextArea::texCoords[currentIndex + 185 * 16 + i] << " : ";
-					std::cout << "186 : " << TextArea::texCoords[currentIndex + 186 * 16 + i];
-					std::cout << std::endl;
-				}
+				std::cout << "BACKSPACE!" << std::endl;
+				notes[i].textArea.RemoveLastCharFromTextArea(i);
+				backspace = true;
 
-
-				TextArea::textTransformsVBO.Bind();
-				glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float)* TextArea::textTransformsFlattened.size(), TextArea::textTransformsFlattened.data());
-				TextArea::textTransformsVBO.Unbind();
-
-				TextArea::textTextureCoordsVBO.Bind();
-				glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float)* TextArea::texCoords.size(), TextArea::texCoords.data());
-				TextArea::textTextureCoordsVBO.Unbind();
 			}
 		}
 		else {
@@ -872,18 +866,6 @@ int main()
 		TextArea::textVAO.Bind();
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		
-		TextArea::textTransformsVBO.Bind();
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * TextArea::textTransformsFlattened.size(), TextArea::textTransformsFlattened.data());
-		TextArea::textTransformsVBO.Unbind();
-
-		TextArea::textTextureCoordsVBO.Bind();
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * TextArea::texCoords.size(), TextArea::texCoords.data());
-		TextArea::textTextureCoordsVBO.Unbind();
-
-		TextArea::textIsVisibleVBO.Bind();
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * TextArea::textIsVisible.size(), TextArea::textIsVisible.data());
-		TextArea::textIsVisibleVBO.Unbind();
 
 		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, TextArea::totalGlyphs);
 		//glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, 1);

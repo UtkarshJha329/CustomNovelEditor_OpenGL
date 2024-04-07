@@ -53,15 +53,58 @@ public:
 	static int totalGlyphs;
 	float textCursor = 0.0f;
 
+	inline static int NUM_CHARS_IN_TEXTAREA = 400;
+
 	int flattenedTransformStartIndex = 0;
 	int flattenedTransformEndIndex = 0;
+
+	void RemoveLastCharFromTextArea(int noteIndex) {
+
+		int currentLastGlyphIndex = (noteIndex + 5) * NUM_CHARS_IN_TEXTAREA + individualLengths[noteIndex + 5];
+
+		std::cout << noteIndex << " : " << currentLastGlyphIndex << std::endl;
+
+		auto glyphsMap = reader->getGlyphs();
+
+		textIsVisible[currentLastGlyphIndex] = 1.0f;
+
+		auto curGlyph = glyphsMap[' '];
+
+		isUI[currentLastGlyphIndex] = IsUI;
+
+		texCoords[currentLastGlyphIndex * 16 + 0] = (curGlyph.x / 512.0f);
+		texCoords[currentLastGlyphIndex * 16 + 1] = ((512.0f - (curGlyph.y + curGlyph.height)) / 512.0f);
+		texCoords[currentLastGlyphIndex * 16 + 2] = (0.0f);
+		texCoords[currentLastGlyphIndex * 16 + 3] = (0.0f);
+		texCoords[currentLastGlyphIndex * 16 + 4] = ((curGlyph.x + curGlyph.width) / 512.0f);
+		texCoords[currentLastGlyphIndex * 16 + 5] = ((512.0f - (curGlyph.y + curGlyph.height)) / 512.0f);
+		texCoords[currentLastGlyphIndex * 16 + 6] = (0.0f);
+		texCoords[currentLastGlyphIndex * 16 + 7] = (0.0f);
+		texCoords[currentLastGlyphIndex * 16 + 8] = ((curGlyph.x + curGlyph.width) / 512.0f);
+		texCoords[currentLastGlyphIndex * 16 + 9] = ((512.0f - (curGlyph.y)) / 512.0f);
+		texCoords[currentLastGlyphIndex * 16 + 10] = (0.0f);
+		texCoords[currentLastGlyphIndex * 16 + 11] = (0.0f);
+		texCoords[currentLastGlyphIndex * 16 + 12] = (curGlyph.x / 512.0f);
+		texCoords[currentLastGlyphIndex * 16 + 13] = ((512.0f - curGlyph.y) / 512.0f);
+		texCoords[currentLastGlyphIndex * 16 + 14] = (0.0f);
+		texCoords[currentLastGlyphIndex * 16 + 15] = (0.0f);
+
+		sampleString[individualLengths[noteIndex + 5]] = ' ';
+		individualLengths[noteIndex + 5]--;
+
+		//std::cout << sampleString.substr(0, individualLengths[noteIndex + 5]) << std::endl;
+
+		TextArea::textTextureCoordsVBO.Bind();
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * TextArea::texCoords.size(), TextArea::texCoords.data());
+		TextArea::textTextureCoordsVBO.Unbind();
+	}
 
 	void FlipVisibility(int start) {
 
 		float startLocation = 0.0f;
 		for (int i = 0; i < start; i++)
 		{
-			startLocation += 400;
+			startLocation += NUM_CHARS_IN_TEXTAREA;
 			//std::cout << "StartLocation: " << startLocation << ", IndividualLengths: " << individualLengths[i] << std::endl;
 		}
 
@@ -89,7 +132,7 @@ public:
 		float startLocation = 0.0f;
 		for (int i = 0; i < start; i++)
 		{
-			startLocation += 400;
+			startLocation += NUM_CHARS_IN_TEXTAREA;
 			//std::cout << "StartLocation: " << startLocation << ", IndividualLengths: " << individualLengths[i] << std::endl;
 		}
 		for (int i = 0; i < glyphTrans.size(); i++)
@@ -146,9 +189,9 @@ public:
 
 			std::cout << "NEW SAMPLE STRING READING" << std::endl;
 
-			for (int j = 0; j < 400; j++)
+			for (int j = 0; j < NUM_CHARS_IN_TEXTAREA; j++)
 			{
-				if (sampleString.length() != 400) {
+				if (sampleString.length() != NUM_CHARS_IN_TEXTAREA) {
 					sampleString += " ";
 				}
 				else {
@@ -258,15 +301,12 @@ public:
 			}
 			/*std::cout << " Individual Length: " << individualLengths[individualLengths.size() - 1] << std::endl;
 			std::cout << textIsVisible.size() << std::endl;*/
-
-			//individualLengths[individualLengths.size() - 1] = 400;
-
 		}
 	}
 
 	void ChangeText(const std::string& newText, int start) {
 		
-		int currentIndex = (start + 5) * 400;
+		int currentIndex = (start + 5) * NUM_CHARS_IN_TEXTAREA;
 
 		sampleString = sampleString.substr(0, individualLengths[start + 5]);
 		//std::cout << individualLengths[start + 5] << " : Truncated : " << sampleString << " : " << sampleString.length() << std::endl;
@@ -277,10 +317,10 @@ public:
 
 		individualLengths[start + 5] = sampleString.length();
 
-		if (sampleString.length() < 400) {
-			for (int i = 0; i < 400; i++)
+		if (sampleString.length() < NUM_CHARS_IN_TEXTAREA) {
+			for (int i = 0; i < NUM_CHARS_IN_TEXTAREA; i++)
 			{
-				if (sampleString.length() < 400) {
+				if (sampleString.length() < NUM_CHARS_IN_TEXTAREA) {
 					sampleString += " ";
 					//std::cout << "Padded." << std::endl;
 				}
@@ -290,7 +330,7 @@ public:
 			}
 		}
 		else {
-			sampleString = sampleString.substr(0, 400);
+			sampleString = sampleString.substr(0, NUM_CHARS_IN_TEXTAREA);
 		}
 
 		//std::cout << sampleString << std::endl;
@@ -312,8 +352,8 @@ public:
 			xOffset = 0.02f;
 		}
 		
-		std::cout << sampleString.length() << " : " << sampleString << std::endl;
-		totalGlyphs -= 400;
+		//std::cout << sampleString.length() << " : " << sampleString << std::endl;
+		totalGlyphs -= NUM_CHARS_IN_TEXTAREA;
 		for (int i = 0; i < sampleString.length(); i++)
 		{
 			textIsVisible[currentIndex + i] = 1.0f;
@@ -410,9 +450,9 @@ public:
 
 		}
 
-		std::cout << "texcoords: " << texCoords.size() << std::endl;
+		//std::cout << "texcoords: " << texCoords.size() << std::endl;
 
-		std::cout << "TOTAL GLYPHS : " << totalGlyphs << std::endl;
+		//std::cout << "TOTAL GLYPHS : " << totalGlyphs << std::endl;
 
 		TextArea::textTransformsVBO.Bind();
 		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * TextArea::textTransformsFlattened.size(), TextArea::textTransformsFlattened.data());
