@@ -612,17 +612,19 @@ int main()
 		glUniformMatrix4fv(persprojLoc, 1, GL_FALSE, glm::value_ptr(camera.projection));
 		
 
-		const float cameraSpeed = 2.5f * (float)deltaTime; // adjust accordingly
-		if (Input::KeyHeld(window, KeyCode::W))
-			camera.trans.position += cameraSpeed * camera.trans.front;
-		if (Input::KeyHeld(window, KeyCode::S))
-			camera.trans.position -= cameraSpeed * camera.trans.front;
-		if (Input::KeyHeld(window, KeyCode::A))
-			camera.trans.position -= cameraSpeed * camera.trans.right;
-		if (Input::KeyHeld(window, KeyCode::D))
-			camera.trans.position += cameraSpeed * camera.trans.right;
-
+		
 		if (Input::rightMouseButtonHeld) {
+
+			const float cameraSpeed = 2.5f * (float)deltaTime; // adjust accordingly
+			if (Input::KeyHeld(window, KeyCode::W))
+				camera.trans.position += cameraSpeed * camera.trans.front;
+			if (Input::KeyHeld(window, KeyCode::S))
+				camera.trans.position -= cameraSpeed * camera.trans.front;
+			if (Input::KeyHeld(window, KeyCode::A))
+				camera.trans.position -= cameraSpeed * camera.trans.right;
+			if (Input::KeyHeld(window, KeyCode::D))
+				camera.trans.position += cameraSpeed * camera.trans.right;
+
 			camera.trans.rotation.y -= (mouseDeltaX * mouseSensitivity * (float)deltaTime);
 			camera.trans.rotation.x -= (mouseDeltaY * -mouseSensitivity * (float)deltaTime);
 
@@ -631,6 +633,18 @@ int main()
 				camera.trans.rotation.x = 89.0f;
 			if (camera.trans.rotation.x < -89.0f)
 				camera.trans.rotation.x = -89.0f;
+		}
+		else {
+			const float cameraSpeed = 2.5f * (float)deltaTime; // adjust accordingly
+			if (Input::KeyHeld(window, KeyCode::W))
+				camera.trans.position += cameraSpeed * camera.trans.up;
+			if (Input::KeyHeld(window, KeyCode::S))
+				camera.trans.position -= cameraSpeed * camera.trans.up;
+			if (Input::KeyHeld(window, KeyCode::A))
+				camera.trans.position -= cameraSpeed * camera.trans.right;
+			if (Input::KeyHeld(window, KeyCode::D))
+				camera.trans.position += cameraSpeed * camera.trans.right;
+
 		}
 
 		mouseDeltaX = 0.0f;
