@@ -324,6 +324,7 @@ int main()
 
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetKeyCallback(window, Input::keyboard_callback);
+	glfwSetCharModsCallback(window, Input::charmods_callback);
 	// tell GLFW to capture our mouse
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
@@ -517,7 +518,7 @@ int main()
 
 
 	Camera camera;
-	camera.trans.position = glm::vec3(0.0f, 0.0f, 30.0f);
+	camera.trans.position = glm::vec3(0.0f, 0.0f, 20.0f);
 	camera.trans.scale = glm::vec3(1.0f);
 
 	double deltaTime = 0.0f;	// Time between current frame and last frame
@@ -543,6 +544,9 @@ int main()
 	camera.projection = glm::perspective(glm::radians(45.0f), float(MAIN_WINDOW_WIDTH) / MAIN_WINDOW_HEIGHT, 0.1f, 1000.0f);
 
 	Shader blurShader("Blur.vert", "Blur.frag");
+
+	float timeToNextCharPress = 0.0f;
+	float timeBetweenCharPress = 1.0f;
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -727,6 +731,47 @@ int main()
 				lastSelectedEntityDelete = outValue;
 				//Debug_Log("Deleting: " << lastSelectedEntityDelete);
 			}
+			else {
+				lastSelectedEntityDelete = -1;
+			}
+		}
+
+		if (lastSelectedEntityDelete != -1) {
+
+			//std::cout << lastSelectedEntityDelete << std::endl;
+
+			if (Input::typed) {
+
+				int i = lastSelectedEntityDelete - NUM_UI_PANELS;
+
+				notes[i].textArea.ChangeText("HELLO, NEW TEXT! IT IS WORKING FINE! WHY IS IT NOT WORKING!?", i);
+				//MoveNotes(notes, notesTransformsFlattened, notes[i].transform.position - glm::vec3(0.1f), notesTransformsVBO, notesVisibilityVBO, i, undoredo, false);
+				Input::typed = false;
+
+				//std::cout << notes[i].textArea.sampleString << std::endl;
+				int currentIndex = (i + 5) * 400;
+
+				std::cout << currentIndex << std::endl;
+				for (int i = 0; i < 16; i++)
+				{
+					std::cout << "125 : " << TextArea::texCoords[currentIndex + 125 * 16 + i] << " : ";
+					std::cout << "185 : " << TextArea::texCoords[currentIndex + 185 * 16 + i] << " : ";
+					std::cout << "186 : " << TextArea::texCoords[currentIndex + 186 * 16 + i];
+					std::cout << std::endl;
+				}
+
+
+				TextArea::textTransformsVBO.Bind();
+				glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float)* TextArea::textTransformsFlattened.size(), TextArea::textTransformsFlattened.data());
+				TextArea::textTransformsVBO.Unbind();
+
+				TextArea::textTextureCoordsVBO.Bind();
+				glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float)* TextArea::texCoords.size(), TextArea::texCoords.data());
+				TextArea::textTextureCoordsVBO.Unbind();
+			}
+		}
+		else {
+			Input::typed = false;
 		}
 
 		/*if (lastSelectedEntityDelete != -1) {
@@ -827,6 +872,19 @@ int main()
 		TextArea::textVAO.Bind();
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		
+		TextArea::textTransformsVBO.Bind();
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * TextArea::textTransformsFlattened.size(), TextArea::textTransformsFlattened.data());
+		TextArea::textTransformsVBO.Unbind();
+
+		TextArea::textTextureCoordsVBO.Bind();
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * TextArea::texCoords.size(), TextArea::texCoords.data());
+		TextArea::textTextureCoordsVBO.Unbind();
+
+		TextArea::textIsVisibleVBO.Bind();
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * TextArea::textIsVisible.size(), TextArea::textIsVisible.data());
+		TextArea::textIsVisibleVBO.Unbind();
+
 		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, TextArea::totalGlyphs);
 		//glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, 1);
 
@@ -885,7 +943,7 @@ int main()
 
 		glActiveTexture(GL_TEXTURE0);
 		if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
-			glBindTexture(GL_TEXTURE_2D, camera.blurTexture);
+			glBindTexture(GL_TEXTURE_2D, camera.entityColourTextureID);
 		else
 			glBindTexture(GL_TEXTURE_2D, camera.framebuffersTexture);
 		glUniform1i(glGetUniformLocation(camera.fbShaderProgram.ID, "screenTexture"), 0);
@@ -906,7 +964,6 @@ int main()
 		Input::ResetKeys();
 
 		frame++;
-
 	}
 
 	notesVAO.Delete();

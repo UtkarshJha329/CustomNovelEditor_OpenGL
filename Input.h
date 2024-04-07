@@ -95,6 +95,15 @@ public:
 		}
 	}
 
+	static void charmods_callback(GLFWwindow* window, unsigned int codepoint, int mods)
+	{
+		curTypedChar = (char)codepoint;
+		typed = true;
+		//std::cout << typed << std::endl;
+	}
+
+	inline static bool typed = false;
+
 	static bool leftMouseButtonPressed;
 	static bool rightMouseButtonPressed;
 	static bool leftMouseButtonHeld;
@@ -111,6 +120,8 @@ public:
 
 	inline static float doubleClickTime = 0.5f;
 	inline static float timeRemainingForDoubleClick = 0.0f;
+
+	inline static char curTypedChar = '0';
 
 private:
 
