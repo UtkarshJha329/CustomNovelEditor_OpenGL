@@ -68,6 +68,18 @@
     <None Include="UITextBasic.frag">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="BlurPass.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="BlurPass.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Blur.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Blur.vert">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ShaderClass.h">

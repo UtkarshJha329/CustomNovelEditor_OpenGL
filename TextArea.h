@@ -37,6 +37,8 @@ public:
 	std::vector<Transform> glyphTrans;
 	float IsUI = 0.0f;
 
+	float fontSize = 28.0f;
+
 	static int totalTextAreas;
 
 	static BMFontReader* reader;
@@ -142,7 +144,7 @@ public:
 			for (int i = 0; i < sampleString.length(); i++)
 			{
 				textIsVisible.push_back(1.0f);
-				std::cout << textIsVisible.size() << std::endl;
+				//std::cout << textIsVisible.size() << std::endl;
 
 				totalGlyphs++;
 				auto curGlyph = glyphsMap[sampleString[i]];
@@ -186,6 +188,11 @@ public:
 				curHeight = transform.position.y - trans.position.y;
 				if (curHeight > height * 2) {
 					trans.scale.y = 0.0f;
+				}
+
+				if (!IsUI) {
+					trans.scale.x *= fontSize / 91;
+					trans.scale.y *= fontSize / 91;
 				}
 
 				textCursor += trans.scale.x;

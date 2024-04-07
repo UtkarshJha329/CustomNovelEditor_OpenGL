@@ -121,7 +121,7 @@ bool z = false;
 bool y = false;
 
 void MoveNotes(std::vector<Note>& notes, std::vector<float>& notesTransformsFlattened
-	, glm::vec3 point, VBO& notesTransformsVBO, VBO& notesVisibilityVBO, int i, UndoRedo& undoredo);
+	, glm::vec3 point, VBO& notesTransformsVBO, VBO& notesVisibilityVBO, int i, UndoRedo& undoredo, bool allowRecording = true);
 
 struct CreateNewNodeButtonStruct {
 	std::vector<Note>& notes;
@@ -246,7 +246,7 @@ void DeleteNote(void* args) {
 	a->notesVisible[i] = 0.0f;
 	//Debug_Log("Deleted Note: " << i);
 
-	Debug_Log("LastSelectedEntityDelete: " << lastSelectedEntityDelete << ", NumIndividualLengths: " << TextArea::individualLengths.size());
+	//Debug_Log("LastSelectedEntityDelete: " << lastSelectedEntityDelete << ", NumIndividualLengths: " << TextArea::individualLengths.size());
 	a->notes[i].textArea.SetVisibility(lastSelectedEntityDelete, 0.0f);
 	
 	deletedNotesEntities.push_back(i);
@@ -398,11 +398,12 @@ int main()
 
 		notes[i].textArea.ID = i;
 		notes[i].textArea.transform = notes[i].transform;
+		notes[i].textArea.transform.position.z -= 0.2f;
 		//notes[i].textArea.transform.position += glm::vec3(-notes[i].width, notes[i].height, 0.0f);
 		notes[i].textArea.width = notes[i].width;
 		notes[i].textArea.height = notes[i].height;
-		//notes[i].textArea.sampleString = "To dispriz'd coil, and be: to othe mind by a life, and love, and mome of somenterprises calamity opposing end swear, to dream:";
-		notes[i].textArea.sampleString = "To dispriz'd coil, and be: to othe mind by a life, and love, and mome of somenterprises";
+		notes[i].textArea.sampleString = "To dispriz'd coil, and be: to othe mind by a life, and love, and mome of somenterprises calamity opposing end swear, to dream:";
+		//notes[i].textArea.sampleString = "To dispriz'd coil, and be: to othe mind by a life, and love, and mome of somenterprises";
 		notes[i].textArea.individualLengths.push_back(notes[i].textArea.sampleString.length());
 		notes[i].textArea.IsUI = 0.0f;
 		notes[i].textArea.FillGlobalTextArrays(values);
@@ -541,6 +542,8 @@ int main()
 
 	camera.projection = glm::perspective(glm::radians(45.0f), float(MAIN_WINDOW_WIDTH) / MAIN_WINDOW_HEIGHT, 0.1f, 1000.0f);
 
+	Shader blurShader("Blur.vert", "Blur.frag");
+
 	while (!glfwWindowShouldClose(window))
 	{
 		
@@ -594,8 +597,14 @@ int main()
 		glBindFramebuffer(GL_FRAMEBUFFER, camera.FBO);
 		glEnable(GL_DEPTH_TEST); // enable depth testing (is disabled for rendering screen-space quad)
 		glEnable(GL_BLEND);
+		//glEnable(GL_STENCIL_TEST);
+		//glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+		//glStencilFunc(GL_ALWAYS, 1, 0xFF); // all fragments should pass the stencil test
+		//glStencilMask(0xFF);
 
-		glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
+		//glClearColor(0.07f, 0.13f, 0.17f, 1.0f);	
+		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		notesShaderProgram.Activate();
@@ -635,9 +644,15 @@ int main()
 		glUniform1f(uiEntitiesCountLocA, NUM_UI_PANELS);
 		int lastSelectedEntityLoc = glGetUniformLocation(notesShaderProgram.ID, "lastSelectedEntity");
 		glUniform1i(lastSelectedEntityLoc, lastSelectedEntity);
+		int lastClickedEntityLoc = glGetUniformLocation(notesShaderProgram.ID, "lastClickedEntity");
+		glUniform1i(lastClickedEntityLoc, lastSelectedEntityDelete);
+		
 
 		notesVAO.Bind();
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		glStencilMask(0xFF);
 		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, NUM_NOTES);
+		
 
 		uiShaderProgram.Activate();
 		int uiEntitiesCountLoc = glGetUniformLocation(uiShaderProgram.ID, "entitiesCount");
@@ -676,6 +691,14 @@ int main()
 			//glBufferSubData(GL_ARRAY_BUFFER, i * sizeof(float), sizeof(float), visibility);
 			//notesVisibilityVBO.Unbind();
 
+			int i = lastSelectedEntity - NUM_UI_PANELS;
+			MoveNotes(notes, notesTransformsFlattened,
+				notes[i].transform.position - glm::vec3(0.0f, 0.0f, 0.4f),
+				notesTransformsVBO, notesVisibilityVBO, i, undoredo, false);
+
+			//Debug_Log("LATER FIXED VALUE VVVVV");
+			//Debug(notes[i].transform.position);
+
 			lastSelectedEntity = -1;
 			recordedMovement = false;
 			//resetText = true;
@@ -688,7 +711,7 @@ int main()
 			//glGetError();
 			if (outValue > NUM_UI_PANELS - 1 && outValue < NUM_UI_PANELS + NUM_NOTES) {
 				lastSelectedEntityDelete = outValue;
-				Debug_Log("Deleting: " << lastSelectedEntityDelete);
+				//Debug_Log("Deleting: " << lastSelectedEntityDelete);
 			}
 		}
 
@@ -722,7 +745,7 @@ int main()
 					ui_manager.ManageUI(mp, CreateNewNote, &cnnbs, lastSelectedUI);
 				}
 				else if(lastSelectedEntityDelete > -1){
-					Debug_Log("Deleting..");
+					//Debug_Log("Deleting..");
 					int i = lastSelectedEntityDelete;
 					DeleteNoteInfo dNI = { lastSelectedEntityDelete, notes, notesVisible,  notesVisibilityVBO };
 					ui_manager.ManageUI(mp, DeleteNote, &dNI, lastSelectedUI);
@@ -793,6 +816,50 @@ int main()
 		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, TextArea::totalGlyphs);
 		//glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, 1);
 
+		glBindFramebuffer(GL_FRAMEBUFFER, camera.blurFBO);
+		//glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+		//glStencilMask(0x00); // disable writing to the stencil buffer
+		//glDisable(GL_DEPTH_TEST);
+		glEnable(GL_DEPTH_TEST);
+
+		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		blurShader.Activate();
+		persprojLoc = glGetUniformLocation(blurShader.ID, "perspectiveProj");
+		glUniformMatrix4fv(persprojLoc, 1, GL_FALSE, glm::value_ptr(camera.projection));
+		cameraTransLoc = glGetUniformLocation(blurShader.ID, "cameraTrans");
+		glUniformMatrix4fv(cameraTransLoc, 1, GL_FALSE, glm::value_ptr(*camera.trans.CalculateTransformMatr()));
+
+		/*for (int i = 0; i < NUM_NOTES; i++)
+		{
+			notes[i].transform.scale *= glm::vec3(1.0f);
+
+			float* head = glm::value_ptr(*notes[i].transform.CalculateTransformMatr());
+			memcpy(&notesTransformsFlattened[i * (int)16], head, 64);
+		}
+		notesTransformsVBO.Bind();
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * notesTransformsFlattened.size(), notesTransformsFlattened.data());
+		notesTransformsVBO.Unbind();*/
+
+
+		notesVAO.Bind();
+		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, NUM_NOTES);
+		glActiveTexture(GL_TEXTURE0);
+		/*glStencilMask(0xFF);
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);*/
+
+		//for (int i = 0; i < NUM_NOTES; i++)
+		//{
+		//	notes[i].transform.scale /= glm::vec3(1.0f);
+
+		//	float* head = glm::value_ptr(*notes[i].transform.CalculateTransformMatr());
+		//	memcpy(&notesTransformsFlattened[i * (int)16], head, 64);
+		//}
+		//notesTransformsVBO.Bind();
+		//glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * notesTransformsFlattened.size(), notesTransformsFlattened.data());
+		//notesTransformsVBO.Unbind();
+
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glDisable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
@@ -801,11 +868,23 @@ int main()
 
 		camera.fbShaderProgram.Activate();
 		glBindVertexArray(rectVAO);
+
+		glActiveTexture(GL_TEXTURE0);
 		if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
-			glBindTexture(GL_TEXTURE_2D, camera.entityColourTextureID);
+			glBindTexture(GL_TEXTURE_2D, camera.blurTexture);
 		else
 			glBindTexture(GL_TEXTURE_2D, camera.framebuffersTexture);
+		glUniform1i(glGetUniformLocation(camera.fbShaderProgram.ID, "screenTexture"), 0);
+
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, camera.blurTexture);
+		glUniform1i(glGetUniformLocation(camera.fbShaderProgram.ID, "blurTexture"), 1);
+
 		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+
+		glStencilMask(0xFF);
+		glStencilFunc(GL_ALWAYS, 0, 0xFF);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -830,11 +909,16 @@ int main()
 
 void MoveNotes(std::vector<Note>& notes, std::vector<float>& notesTransformsFlattened
 				, glm::vec3 point, VBO& notesTransformsVBO,VBO& notesVisibilityVBO, 
-				int i, UndoRedo& undoredo) {
+				int i, UndoRedo& undoredo, bool allowRecording) {
+
 	glm::vec3 oldNotesPos = notes[i].transform.position;
-	notes[i].transform.position = glm::vec3(point);
+	point += glm::vec3(0.0f, 0.0f, 0.2f);
+	notes[i].transform.position = point;
 	float* curNewTrans = glm::value_ptr(*notes[i].transform.CalculateTransformMatr());
 	memcpy(&notesTransformsFlattened[i * (int)16], curNewTrans, 64);
+
+	//Debug_Log("EARLIER VALUE VVVV");
+	//Debug(notes[i].transform.position);
 
 	/*float newTrans[16];
 	memcpy(&newTrans[0], curNewTrans, 64);*/
@@ -854,11 +938,11 @@ void MoveNotes(std::vector<Note>& notes, std::vector<float>& notesTransformsFlat
 
 	glm::vec3 oldTextAreaPos = notes[i].textArea.transform.position;
 	notes[i].textArea.transform.position = point;
-
+	
 
 	glm::vec3 offset = point - oldTextAreaPos;
 	if (resetText[i] && glm::length(offset) > 0.1f) {
-		offset -= glm::vec3(notes[i].textArea.width, -notes[i].textArea.height, 0.0f);
+		offset -= glm::vec3(notes[i].textArea.width, -notes[i].textArea.height, -0.01f);
 		resetText[i] = false;
 	}
 
@@ -870,7 +954,7 @@ void MoveNotes(std::vector<Note>& notes, std::vector<float>& notesTransformsFlat
 	glBufferSubData(GL_ARRAY_BUFFER, start * sizeof(float), sizeof(float) * arraySize, &notes[i].textArea.textTransformsFlattened[start]);
 	TextArea::textTransformsVBO.Unbind();
 
-	if (!recordedMovement) {
+	if (!recordedMovement && allowRecording) {
 		MousePickingMoving* mpm = new MousePickingMoving{
 				oldNotesPos,
 				oldTextAreaPos,

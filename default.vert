@@ -11,6 +11,8 @@ float scale = 0.25;
 out vec3 color;
 out float isVisible;
 out float instance_ID;
+out float down;
+out vec3 posOut;
 
 uniform mat4 perspectiveProj;
 uniform mat4 cameraTrans;
@@ -28,6 +30,9 @@ void main()
 //	else{
 //		color = vec3(0.8f, 0.8f, 0.0f);
 //	}
+
+	down = (aPos.y < 0.0f) ? 0.6f : 1.0f;
+	posOut = aPos;
 
 	color = vec3(pos.x, pos.y, pos.z);
 	gl_Position = pos;

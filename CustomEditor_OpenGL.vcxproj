@@ -165,10 +165,14 @@
     <ClCompile Include="VBO.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="BlurPass.frag" />
+    <None Include="BlurPass.vert" />
     <None Include="framebuffer.frag" />
     <None Include="framebuffer.vert" />
     <None Include="default.frag" />
     <None Include="default.vert" />
+    <None Include="Blur.frag" />
+    <None Include="Blur.vert" />
     <None Include="UITextBasic.frag" />
     <None Include="UITextBasic.vert" />
     <None Include="UIBasic.frag" />
