@@ -142,11 +142,6 @@ public:
 		//std::cout << "(START - NUMIP_PANELS)* 126 + NUM_UI_PANELS * 6: " << (start - 5) * 126 + 30 << std::endl;
 	}
 
-	void AddToString(const std::string& stringToAdd) {
-
-
-	}
-
 	void FillGlobalTextArrays(std::vector<float>& values, glm::vec3 offset = glm::vec3(0.0f) , int start = -1, int end = -1) {
 
 		if (start != -1 && end != -1) {
@@ -309,20 +304,16 @@ public:
 		int currentIndex = (start + 5) * NUM_CHARS_IN_TEXTAREA;
 
 		sampleString = sampleString.substr(0, individualLengths[start + 5]);
-		//std::cout << individualLengths[start + 5] << " : Truncated : " << sampleString << " : " << sampleString.length() << std::endl;
 		sampleString += newText;
-		
-		//std::cout << newText << std::endl;
-		//std::cout << individualLengths[start + 5] << " : " << sampleString << " : " << sampleString.length() << std::endl;
 
 		individualLengths[start + 5] = sampleString.length();
+
 
 		if (sampleString.length() < NUM_CHARS_IN_TEXTAREA) {
 			for (int i = 0; i < NUM_CHARS_IN_TEXTAREA; i++)
 			{
 				if (sampleString.length() < NUM_CHARS_IN_TEXTAREA) {
 					sampleString += " ";
-					//std::cout << "Padded." << std::endl;
 				}
 				else {
 					break;
@@ -333,11 +324,8 @@ public:
 			sampleString = sampleString.substr(0, NUM_CHARS_IN_TEXTAREA);
 		}
 
-		//std::cout << sampleString << std::endl;
-
 		glyphTrans.clear();
 
-		//std::cout << "HERE INSTEAD" << std::endl;
 		auto glyphsMap = reader->getGlyphs();
 		float curWidth = 0;
 		float curHeight = 0;
@@ -351,20 +339,15 @@ public:
 		else {
 			xOffset = 0.02f;
 		}
-		
-		//std::cout << sampleString.length() << " : " << sampleString << std::endl;
+
+		textCursor = 0.0f;
 		totalGlyphs -= NUM_CHARS_IN_TEXTAREA;
 		for (int i = 0; i < sampleString.length(); i++)
 		{
 			textIsVisible[currentIndex + i] = 1.0f;
-			//std::cout << textIsVisible.size() << std::endl;
 
 			totalGlyphs++;
 			auto curGlyph = glyphsMap[sampleString[i]];
-			//std::cout << (char)curGlyph.id << std::endl;
-			//std::cout << currentIndex << " : " << i << " : " << curGlyph.width << ", " << curGlyph.height << std::endl;
-			//std::cout << sampleString[i] << std::endl;
-			//float yOffset = -(curGlyph.height - curGlyph.yOffset) / (2 * 512.0f);
 			float yOffset = (0.0f - curGlyph.yOffset) / (512.0f);
 
 			Transform trans;
@@ -398,7 +381,6 @@ public:
 
 			curHeight = transform.position.y - trans.position.y;
 			if (curHeight > height * 2) {
-				//std::cout << "HIDDEN VERTICALLY." << std::endl;
 				trans.scale.y = 0.0f;
 			}
 
@@ -416,20 +398,13 @@ public:
 			}
 
 			isUI[currentIndex + i] = IsUI;
-			//std::cout << isUI.size() << " : " << isUI[isUI.size() - 1] << std::endl;
 
 			float* head = glm::value_ptr(*trans.CalculateTransformMatr());
-
-			//for (int j = 0; j < 16; j++)
-			//{
-			//	textTransformsFlattened[currentIndex + i * 16 + j] = (head[j]);
-			//}
 
 			memcpy(&textTransformsFlattened[currentIndex * 16 + i * 16], head, sizeof(float) * 16);
 
 
 			glyphTrans.push_back(trans);
-			//std::cout << currentIndex + i * 16 << std::endl;
 			texCoords[currentIndex * 16 + i * 16 + 0] = (curGlyph.x / 512.0f);
 			texCoords[currentIndex * 16 + i * 16 + 1] = ((512.0f - (curGlyph.y + curGlyph.height)) / 512.0f);
 			texCoords[currentIndex * 16 + i * 16 + 2] = (0.0f);
@@ -449,10 +424,6 @@ public:
 
 
 		}
-
-		//std::cout << "texcoords: " << texCoords.size() << std::endl;
-
-		//std::cout << "TOTAL GLYPHS : " << totalGlyphs << std::endl;
 
 		TextArea::textTransformsVBO.Bind();
 		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * TextArea::textTransformsFlattened.size(), TextArea::textTransformsFlattened.data());

@@ -592,28 +592,11 @@ int main()
 			backspace = false;
 		}
 
-		/*if(Input::leftMouseButtonHeld)
-		{
-			Debug_Log("LEFT MOUSE HELD DOWN." << lhd);
-			lhd++;
-		}
-
-		if (Input::doubleClicked) {
-			Debug_Log("DOUBLE CLICKED" << dc);
-			dc++;
-		}*/
-
 		glBindFramebuffer(GL_FRAMEBUFFER, camera.FBO);
-		glEnable(GL_DEPTH_TEST); // enable depth testing (is disabled for rendering screen-space quad)
+		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
-		//glEnable(GL_STENCIL_TEST);
-		//glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-		//glStencilFunc(GL_ALWAYS, 1, 0xFF); // all fragments should pass the stencil test
-		//glStencilMask(0xFF);
 
-		//glClearColor(0.07f, 0.13f, 0.17f, 1.0f);	
 		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		notesShaderProgram.Activate();
@@ -624,7 +607,7 @@ int main()
 		
 		if (Input::rightMouseButtonHeld) {
 
-			const float cameraSpeed = 2.5f * (float)deltaTime; // adjust accordingly
+			const float cameraSpeed = 2.5f * (float)deltaTime;
 			if (Input::KeyHeld(window, KeyCode::W))
 				camera.trans.position += cameraSpeed * camera.trans.front;
 			if (Input::KeyHeld(window, KeyCode::S))
@@ -644,7 +627,7 @@ int main()
 				camera.trans.rotation.x = -89.0f;
 		}
 		else {
-			const float cameraSpeed = 2.5f * (float)deltaTime; // adjust accordingly
+			const float cameraSpeed = 2.5f * (float)deltaTime;
 			if (Input::KeyHeld(window, KeyCode::UP_ARROW))
 				camera.trans.position += cameraSpeed * camera.trans.up;
 			if (Input::KeyHeld(window, KeyCode::DOWN_ARROW))
@@ -683,8 +666,7 @@ int main()
 		int UIlastSelectedEntityLoc = glGetUniformLocation(uiShaderProgram.ID, "lastSelectedUI");
 		glUniform1i(UIlastSelectedEntityLoc, lastSelectedUI);
 
-		uiVAO.Bind();/*
-		glDisable(GL_DEPTH_TEST);*/
+		uiVAO.Bind();
 
 		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, NUM_UI_PANELS);
 
@@ -692,49 +674,35 @@ int main()
 
 
 		if (Input::doubleClicked && lastSelectedEntity == -1) {
-			//Debug_Log("Double Clicked.");
-			//glBindFramebuffer(GL_FRAMEBUFFER, camera.FBO);
+
+
 			glReadBuffer(GL_COLOR_ATTACHMENT2);
 			glReadPixels(Input::mouseX, MAIN_WINDOW_HEIGHT - Input::mouseY, 1, 1, GL_RED_INTEGER, GL_INT, &entityFromTexture);
-			//glGetError();
+
 			if (entityFromTexture >= NUM_NOTES + NUM_UI_PANELS) {
 				entityFromTexture = -1;
 				lastSelectedEntity = -1;
 				lastSelectedUI = -1;
 			}
-			//std::cout << "Mouse over entity : " << entityFromTexture << std::endl;
-			//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
 		else if (Input::doubleClicked && lastSelectedEntity != -1) {
-
-			//float* visibility = new float(1.0f);
-			//int i = lastSelectedEntity - NUM_UI_PANELS;
-			//notesVisible[i] = 1.0f;
-			//notesVisibilityVBO.Bind();
-			//glBufferSubData(GL_ARRAY_BUFFER, i * sizeof(float), sizeof(float), visibility);
-			//notesVisibilityVBO.Unbind();
 
 			int i = lastSelectedEntity - NUM_UI_PANELS;
 			MoveNotes(notes, notesTransformsFlattened,
 				notes[i].transform.position - glm::vec3(0.0f, 0.0f, 0.4f),
 				notesTransformsVBO, notesVisibilityVBO, i, undoredo, false);
 
-			//Debug_Log("LATER FIXED VALUE VVVVV");
-			//Debug(notes[i].transform.position);
-
 			lastSelectedEntity = -1;
 			recordedMovement = false;
-			//resetText = true;
 		}
 
 		if (Input::leftMouseButtonPressed) {
 			int outValue = 0;
 			glReadBuffer(GL_COLOR_ATTACHMENT2);
 			glReadPixels(Input::mouseX, MAIN_WINDOW_HEIGHT - Input::mouseY, 1, 1, GL_RED_INTEGER, GL_INT, &outValue);
-			//glGetError();
+
 			if (outValue > NUM_UI_PANELS - 1 && outValue < NUM_UI_PANELS + NUM_NOTES) {
 				lastSelectedEntityDelete = outValue;
-				//Debug_Log("Deleting: " << lastSelectedEntityDelete);
 			}
 			else {
 				lastSelectedEntityDelete = -1;
@@ -743,7 +711,6 @@ int main()
 
 		if (lastSelectedEntityDelete != -1) {
 
-			//std::cout << lastSelectedEntityDelete << std::endl;
 			int i = lastSelectedEntityDelete - NUM_UI_PANELS;
 
 			if (Input::typed) {
@@ -751,10 +718,8 @@ int main()
 				std::string curChar = "";
 				curChar += Input::curTypedChar;
 				notes[i].textArea.ChangeText(curChar, i);
-				//MoveNotes(notes, notesTransformsFlattened, notes[i].transform.position - glm::vec3(0.1f), notesTransformsVBO, notesVisibilityVBO, i, undoredo, false);
+				//MoveNotes(notes, notesTransformsFlattened, notes[i].transform.position, notesTransformsVBO, notesVisibilityVBO, i, undoredo, false);
 				Input::typed = false;
-
-				//std::cout << notes[i].textArea.sampleString << std::endl;
 			}
 			else if (glfwGetKey(window, GLFW_KEY_BACKSPACE) == GLFW_PRESS && !backspace) {
 
@@ -768,31 +733,15 @@ int main()
 			Input::typed = false;
 		}
 
-		/*if (lastSelectedEntityDelete != -1) {
-			
-			Debug_Log("Attempting to delete: " << lastSelectedEntityDelete);
-			MouseData mp = { Input::mouseX, Input::mouseY
-								, Input::leftMouseButtonPressed, Input::rightMouseButtonPressed
-								, Input::leftMouseButtonReleased, Input::rightMouseButtonReleased };
-
-			int i = lastSelectedEntityDelete;
-			DeleteNoteInfo dNI = { lastSelectedEntityDelete, notesVisible,  notesVisibilityVBO };
-			void* a = (void*)&dNI;
-			DeleteNote(a);
-		}*/
-
 		if (entityFromTexture != -1) {
 			if (entityFromTexture < NUM_UI_PANELS) {
 				lastSelectedUI = entityFromTexture;
 				
-				//std::cout << "FRAME: " << frame << std::endl;
-
 				ButtonClickStruct bcs = { ui_visible, lastSelectedUI };
 				MouseData mp = { Input::mouseX, Input::mouseY
 								, Input::leftMouseButtonPressed, Input::rightMouseButtonPressed
 								, Input::leftMouseButtonReleased, Input::rightMouseButtonReleased};
 				
-				//ui_manager.ManageUI(mp, ButtonClickTest, &bcs, lastSelectedUI);
 				if (lastSelectedUI > 0) {
 					CreateNewNodeButtonStruct cnnbs = { notes, notesTransformsFlattened, notesVisible, notesVisibilityVBO, lastSelectedEntity };
 					ui_manager.ManageUI(mp, CreateNewNote, &cnnbs, lastSelectedUI);
