@@ -752,7 +752,7 @@ int main()
 				if (outValue > NUM_UI_PANELS - 1 && outValue < NUM_UI_PANELS + NUM_NOTES) {
 					lastSelectedEntityDelete = outValue;
 				}
-				else {
+				else if(outValue >= NUM_NOTES + NUM_UI_PANELS) {
 					lastSelectedEntityDelete = -1;
 				}
 
@@ -766,9 +766,12 @@ int main()
 			linePoints.clear();
 			for (int i = 0; i < linesSelectedEntities.size(); i++)
 			{
-				linePoints.push_back(notes[linesSelectedEntities[i]].transform.position.x);
-				linePoints.push_back(notes[linesSelectedEntities[i]].transform.position.y);
-				linePoints.push_back(notes[linesSelectedEntities[i]].transform.position.z);
+				if (notesVisible[linesSelectedEntities[i]])
+				{
+					linePoints.push_back(notes[linesSelectedEntities[i]].transform.position.x);
+					linePoints.push_back(notes[linesSelectedEntities[i]].transform.position.y);
+					linePoints.push_back(notes[linesSelectedEntities[i]].transform.position.z);
+				}
 			}
 
 			lineShader.Activate();

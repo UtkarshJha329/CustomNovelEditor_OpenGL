@@ -16,6 +16,11 @@ void build_line(vec3 posA, vec3 posB, vec3 cameraPos)
     normal = normalize(normal);
     normal *= lineWidth;
 
+    dir = normalize(dir);
+    dir *= 1.414;
+    posA = posA + dir;
+    posB = posB - dir;
+
     vec4 position = vec4(0.0f);
 
     position = perspectiveProj * inverse(cameraTrans) * vec4(posA + normal, 1.0f);
