@@ -272,6 +272,18 @@ void DeleteNote(void* args) {
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * a->notes[i].textArea.textIsVisible.size(), &a->notes[i].textArea.textIsVisible[0]);
 	a->notes[i].textArea.textIsVisibleVBO.Unbind();
 
+	for (int k = 0; k < linesSelectedEntities.size(); k++)
+	{
+		if (linesSelectedEntities[k] == i) {
+			if (k % 2 == 1) {
+				linesSelectedEntities[k] = linesSelectedEntities[k - 1];
+			}
+			else {
+				linesSelectedEntities[k] = linesSelectedEntities[k + 1];
+			}
+		}
+	}
+
 	ChangeVisibility* cnv = new ChangeVisibility{
 		a->notes,
 		a->notesVisible,
