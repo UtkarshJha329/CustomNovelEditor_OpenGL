@@ -77,6 +77,30 @@ public:
 		return &transformMatrix;
 	}
 
+	glm::mat4 CalculateTransformMatr(glm::quat _rotQuat) {
+
+		transformMatrix = glm::mat4(1.0f);
+
+		//TRANSLATE
+		transformMatrix = glm::translate(transformMatrix, position);
+
+		//ROTATE
+		rotQuat = glm::quat(_rotQuat);
+
+		front = rotQuat * worldFront;
+		up = rotQuat * worldUp;
+		right = rotQuat * worldRight;
+
+		rotMt = glm::mat4_cast(rotQuat);
+		transformMatrix = transformMatrix * rotMt;
+
+		//SCALE
+		transformMatrix = glm::scale(transformMatrix, scale);
+		return transformMatrix;
+	}
+
+	//glm::quat lookAtQuat = glm::quatLookAt(glm::normalize(curTransform->position - curCameraTrans->position), curCameraTrans->up);
+
 
 	glm::vec3 front = glm::vec3(0.0f, 0.0f, -1.0f);
 	glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);

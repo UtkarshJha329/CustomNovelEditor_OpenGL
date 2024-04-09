@@ -15,8 +15,8 @@ class Shader
 public:
 	unsigned int ID;
 	Shader() { ID = 0; }
-	Shader(const char* vertexFile, const char* fragmentFile);
-	void Init(const char* vertexFile, const char* fragmentFile);
+	Shader(const char* vertexFile, const char* fragmentFile, const char* geometryFile = nullptr);
+	void Init(const char* vertexFile, const char* fragmentFile, const char* geometryFile = nullptr);
 	void compileErrors(unsigned int shader, const char* type);
 	void Activate();
 	void Delete();

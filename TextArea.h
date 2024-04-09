@@ -166,6 +166,7 @@ public:
 		}
 		else {
 			glyphTrans.clear();
+			//std::cout << "COPIED TRANS : " << ID  << " : " << textAreaTransformsFlattened.size() << std::endl;
 
 			//std::cout << "HERE INSTEAD" << std::endl;
 			auto glyphsMap = reader->getGlyphs();
@@ -182,7 +183,7 @@ public:
 				xOffset = 0.02f;
 			}
 
-			std::cout << "NEW SAMPLE STRING READING" << std::endl;
+			//std::cout << "NEW SAMPLE STRING READING" << std::endl;
 
 			for (int j = 0; j < NUM_CHARS_IN_TEXTAREA; j++)
 			{
@@ -380,7 +381,7 @@ public:
 			}
 
 			curHeight = transform.position.y - trans.position.y;
-			if (curHeight > height * 2) {
+			if (curHeight > height) {
 				trans.scale.y = 0.0f;
 			}
 
@@ -445,6 +446,7 @@ public:
 	inline static VBO textIsUIVBO;
 	inline static VBO textTextureCoordsVBO;
 	inline static VBO textTransformsVBO;
+	inline static VBO textAreaTransformsVBO;
 	inline static VBO textIsVisibleVBO;
 	inline static EBO textEBO;
 
@@ -456,9 +458,9 @@ public:
 		textVAO.Bind();
 		textVBO.Init(textAreavertices, sizeof(float) * 12, GL_STATIC_DRAW);
 		textIsUIVBO.Init(TextArea::isUI.data(), sizeof(float) * (TextArea::isUI.size() + EXTRA_ALLOCATION), GL_STATIC_DRAW);
-		std::cout << "WHILE BINDING SIZE OF TEXCOORDS: " << texCoords.size() << std::endl;
-		textTextureCoordsVBO.Init(TextArea::texCoords.data(), sizeof(float) * (TextArea::texCoords.size() + EXTRA_ALLOCATION), GL_DYNAMIC_DRAW);
-		std::cout << "WHILE BINDING SIZE OF flattnedTransforms: " << textTransformsFlattened.size() << std::endl;
+		//std::cout << "WHILE BINDING SIZE OF TEXCOORDS: " << texCoords.size() << std::endl;
+		textTextureCoordsVBO.Init(TextArea::texCoords.data(), sizeof(float) * (TextArea::texCoords.size() + EXTRA_ALLOCATION * 16), GL_DYNAMIC_DRAW);
+		//std::cout << "WHILE BINDING SIZE OF flattnedTransforms: " << textTransformsFlattened.size() << std::endl;
 		textTransformsVBO.Init(TextArea::textTransformsFlattened.data(), sizeof(float) * (TextArea::textTransformsFlattened.size() + EXTRA_ALLOCATION * 16), GL_DYNAMIC_DRAW);
 		textIsVisibleVBO.Init(TextArea::textIsVisible.data(), sizeof(float) * (TextArea::textIsVisible.size() + EXTRA_ALLOCATION), GL_DYNAMIC_DRAW);
 		textTransformsVBO.Bind();

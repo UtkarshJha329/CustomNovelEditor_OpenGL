@@ -167,6 +167,9 @@
   <ItemGroup>
     <None Include="BlurPass.frag" />
     <None Include="BlurPass.vert" />
+    <None Include="LineRenderer.frag" />
+    <None Include="LineRenderer.gs" />
+    <None Include="LineRenderer.vert" />
     <None Include="framebuffer.frag" />
     <None Include="framebuffer.vert" />
     <None Include="default.frag" />

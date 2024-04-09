@@ -80,6 +80,15 @@
     <None Include="Blur.vert">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="LineRenderer.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="LineRenderer.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="LineRenderer.gs">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ShaderClass.h">

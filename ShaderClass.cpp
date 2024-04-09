@@ -18,16 +18,22 @@ std::string get_file_contents(const char* filename)
 }
 
 // Constructor that build the Shader Program from 2 different shaders
-Shader::Shader(const char* vertexFile, const char* fragmentFile)
+Shader::Shader(const char* vertexFile, const char* fragmentFile, const char* geometryFile)
 {
-	Init(vertexFile, fragmentFile);
+	Init(vertexFile, fragmentFile, geometryFile);
 }
 
-void Shader::Init(const char* vertexFile, const char* fragmentFile)
+void Shader::Init(const char* vertexFile, const char* fragmentFile, const char* geometryFile)
 {
 	// Read vertexFile and fragmentFile and store the strings
 	std::string vertexCode = get_file_contents(vertexFile);
 	std::string fragmentCode = get_file_contents(fragmentFile);
+
+	std::string geometryCode;
+	if (geometryFile != nullptr)
+	{
+		geometryCode = get_file_contents(geometryFile);
+	}
 
 	// Convert the shader source strings into character arrays
 	const char* vertexSource = vertexCode.c_str();
@@ -51,11 +57,24 @@ void Shader::Init(const char* vertexFile, const char* fragmentFile)
 	// Checks if Shader compiled succesfully
 	compileErrors(fragmentShader, "FRAGMENT");
 
+	unsigned int geometryShader;
+	if (geometryFile != nullptr)
+	{
+		const char* gShaderCode = geometryCode.c_str();
+		geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+		glShaderSource(geometryShader, 1, &gShaderCode, NULL);
+		glCompileShader(geometryShader);
+		compileErrors(geometryShader, "GEOMETRY");
+		std::cout << "COMPILED GEOMETRY SHADER SUCCESSFULLY!!" << std::endl;
+	}
+
 	// Create Shader Program Object and get its reference
 	ID = glCreateProgram();
 	// Attach the Vertex and Fragment Shaders to the Shader Program
 	glAttachShader(ID, vertexShader);
 	glAttachShader(ID, fragmentShader);
+	if (geometryFile != nullptr)
+		glAttachShader(ID, geometryShader);
 	// Wrap-up/Link all the shaders together into the Shader Program
 	glLinkProgram(ID);
 	// Checks if Shaders linked succesfully

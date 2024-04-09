@@ -46,6 +46,8 @@ int NUM_UI_PANELS = 5;
 
 int EXTRA_BUFFER_ALLOCATION = 100;
 
+std::vector<int> linesSelectedEntities;
+
 // Vertices coordinates
 float vertices[] =
 {
@@ -292,6 +294,15 @@ void DeleteNote(void* args) {
 
 }
 
+int Factorial(int n) {
+	if (n == 0) {
+		return 1;
+	}
+	else {
+		return n * Factorial(n - 1);
+	}
+}
+
 int main()
 {
 	UndoRedo undoredo;
@@ -300,7 +311,6 @@ int main()
 	reader.read();
 
 	TextArea::reader = &reader;
-	
 
 	glfwInit();
 
@@ -360,6 +370,7 @@ int main()
 
 		memcpy(&ui_transformsFlattened[i * (int)16], head, 64);
 		buttons[i].init(i);
+		buttons[i].textArea.ID = i;
 		buttons[i].textArea.transform = buttons[i].transform;
 		buttons[i].textArea.transform.position.x -= 0.1f;
 		buttons[i].textArea.width = 0.1f;
@@ -398,7 +409,7 @@ int main()
 
 		memcpy(&notesTransformsFlattened[i * (int)16], head, 64);
 
-		notes[i].textArea.ID = i;
+		notes[i].textArea.ID = i + NUM_UI_PANELS;
 		notes[i].textArea.transform = notes[i].transform;
 		notes[i].textArea.transform.position.z -= 0.2f;
 		//notes[i].textArea.transform.position += glm::vec3(-notes[i].width, notes[i].height, 0.0f);
@@ -409,6 +420,14 @@ int main()
 		notes[i].textArea.individualLengths.push_back(notes[i].textArea.sampleString.length());
 		notes[i].textArea.IsUI = 0.0f;
 		notes[i].textArea.FillGlobalTextArrays(values);
+
+		for (int i = 0; i < 3; i++)
+		{
+			int randNoteId = rand() % NUM_NOTES;
+			notes[i].connectedToNotes.push_back(randNoteId);
+		}
+
+
 		resetText[i] = true;
 		notesVisible[i] = 1.0f;
 	}
@@ -443,13 +462,12 @@ int main()
 		{
 			notes[i].textArea.textIsVisible[i + j] = 1.0f;
 		}
-		MoveNotes(notes, notesTransformsFlattened, notes[i].transform.position + glm::vec3(1.0f), notesTransformsVBO, notesVisibilityVBO,  i, undoredo);
+		MoveNotes(notes, notesTransformsFlattened, notes[i].transform.position, notesTransformsVBO, notesVisibilityVBO,  i, undoredo);
 		//notesVisible[i] = 0.0f;
 	}
 	notesVisibilityVBO.Bind();
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * notesVisible.size(), notesVisible.data());
 	notesVisibilityVBO.Unbind();
-	
 
 	undoredo.Flush();
 	recordedMovement = false;
@@ -548,6 +566,27 @@ int main()
 
 	float timeToNextCharPress = 0.0f;
 	float timeBetweenCharPress = 1.0f;
+
+	Shader lineShader("LineRenderer.vert", "LineRenderer.frag", "LineRenderer.gs");
+	lineShader.Activate();
+	int lineWidthLoc = glGetUniformLocation(lineShader.ID, "lineWidth");
+	glUniform1f(lineWidthLoc, 0.1f);
+
+	std::vector<float> linePoints;
+
+	VAO linesVAO;
+
+	linesVAO.Init();
+	linesVAO.Bind();
+
+	VBO linesPointsVBO(linePoints.data(), sizeof(float) * linePoints.size(), GL_DYNAMIC_DRAW);
+	linesPointsVBO.Bind();
+
+	linesVAO.LinkAttrib(linesPointsVBO, 0, 3, GL_FLOAT, 3 * sizeof(float), (void*)0);
+
+	linesVAO.Unbind();
+	linesPointsVBO.Unbind();
+
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -655,10 +694,7 @@ int main()
 		
 
 		notesVAO.Bind();
-		glStencilFunc(GL_ALWAYS, 1, 0xFF);
-		glStencilMask(0xFF);
 		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, NUM_NOTES);
-		
 
 		uiShaderProgram.Activate();
 		int uiEntitiesCountLoc = glGetUniformLocation(uiShaderProgram.ID, "entitiesCount");
@@ -697,16 +733,65 @@ int main()
 		}
 
 		if (Input::leftMouseButtonPressed) {
+			
 			int outValue = 0;
 			glReadBuffer(GL_COLOR_ATTACHMENT2);
 			glReadPixels(Input::mouseX, MAIN_WINDOW_HEIGHT - Input::mouseY, 1, 1, GL_RED_INTEGER, GL_INT, &outValue);
 
-			if (outValue > NUM_UI_PANELS - 1 && outValue < NUM_UI_PANELS + NUM_NOTES) {
-				lastSelectedEntityDelete = outValue;
+			if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+
+				if (outValue > NUM_UI_PANELS - 1 && outValue < NUM_UI_PANELS + NUM_NOTES) {
+					linesSelectedEntities.push_back(outValue - NUM_UI_PANELS);
+					//std::cout << linesSelectedEntities.size() << std::endl;
+				}
 			}
 			else {
-				lastSelectedEntityDelete = -1;
+				/*linesSelectedEntities.clear();
+				linePoints.clear();*/
+
+				if (outValue > NUM_UI_PANELS - 1 && outValue < NUM_UI_PANELS + NUM_NOTES) {
+					lastSelectedEntityDelete = outValue;
+				}
+				else {
+					lastSelectedEntityDelete = -1;
+				}
+
+
 			}
+
+		}
+
+		if (linesSelectedEntities.size() % 2 == 0) {
+
+			linePoints.clear();
+			for (int i = 0; i < linesSelectedEntities.size(); i++)
+			{
+				linePoints.push_back(notes[linesSelectedEntities[i]].transform.position.x);
+				linePoints.push_back(notes[linesSelectedEntities[i]].transform.position.y);
+				linePoints.push_back(notes[linesSelectedEntities[i]].transform.position.z);
+			}
+
+			lineShader.Activate();
+			int cameraTransLocGmtry = glGetUniformLocation(lineShader.ID, "cameraTrans");
+			glUniformMatrix4fv(cameraTransLocGmtry, 1, GL_FALSE, glm::value_ptr(*camera.trans.CalculateTransformMatr()));
+			int persprojLocGmtry = glGetUniformLocation(lineShader.ID, "perspectiveProj");
+			glUniformMatrix4fv(persprojLocGmtry, 1, GL_FALSE, glm::value_ptr(camera.projection));
+			int cameraPosLoc = glGetUniformLocation(lineShader.ID, "camPos");
+			glUniform3f(cameraPosLoc, camera.trans.position.x, camera.trans.position.y, camera.trans.position.z);
+
+			linesVAO.Bind();
+
+			linesPointsVBO.Init(linePoints.data(), sizeof(float)* linePoints.size(), GL_DYNAMIC_DRAW);
+			linesPointsVBO.Bind();
+
+			linesVAO.LinkAttrib(linesPointsVBO, 0, 3, GL_FLOAT, 3 * sizeof(float), (void*)0);
+
+			linesVAO.Unbind();
+			linesPointsVBO.Unbind();
+
+			linesVAO.Bind();
+			glDrawArrays(GL_LINES, 0, linePoints.size());
+
 		}
 
 		if (lastSelectedEntityDelete != -1) {
@@ -723,7 +808,7 @@ int main()
 			}
 			else if (glfwGetKey(window, GLFW_KEY_BACKSPACE) == GLFW_PRESS && !backspace) {
 
-				std::cout << "BACKSPACE!" << std::endl;
+				//std::cout << "BACKSPACE!" << std::endl;
 				notes[i].textArea.RemoveLastCharFromTextArea(i);
 				backspace = true;
 
