@@ -453,6 +453,7 @@ int main()
 	notesVAO.Init();
 	notesVAO.Bind();
 
+<<<<<<< Updated upstream
 	VBO notesVBO(vertices, sizeof(vertices), GL_STATIC_DRAW);
 	//VBO notesTransformsVBO(offsets.data(), offsets.size());
 	VBO notesTransformsVBO(notesTransformsFlattened.data(), sizeof(float) * notesTransformsFlattened.size() + EXTRA_BUFFER_ALLOCATION * 16 * sizeof(float), GL_DYNAMIC_DRAW);
@@ -471,6 +472,9 @@ int main()
 	notesTransformsVBO.Unbind();
 	notesVisibilityVBO.Unbind();
 	notesEBO.Unbind();
+=======
+	Note::InitVAOsVBOsEBOs(vertices, indices, EXTRA_BUFFER_ALLOCATION);
+>>>>>>> Stashed changes
 
 	for (int i = 0; i < NUM_NOTES; i++)
 	{
