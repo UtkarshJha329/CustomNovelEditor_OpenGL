@@ -42,6 +42,19 @@ int TextArea::totalTextAreas;
 int NUM_NOTES = 100;
 int NUM_UI_PANELS = 5;
 
+<<<<<<< Updated upstream
+=======
+std::vector<float> Note::visible(NUM_NOTES);
+std::vector<float> Note::flattenedTransforms(NUM_NOTES * 16);
+
+
+int EXTRA_BUFFER_ALLOCATION = 100;
+
+std::vector<int> linesSelectedEntities;
+std::vector<int> newLinesSelectedEntities;
+std::vector<int> deleteLinesSelectedEntities;
+
+>>>>>>> Stashed changes
 // Vertices coordinates
 float vertices[] =
 {
@@ -185,11 +198,18 @@ int main()
 
 	Shader notesShaderProgram("default.vert", "default.frag");
 
+<<<<<<< Updated upstream
 	std::vector<float> transformsFlattened(NUM_NOTES * 16);
+=======
+>>>>>>> Stashed changes
 	srand((unsigned int)time(0));
 	std::vector<Note> notes(NUM_NOTES);
 	for (int i = 0; i < NUM_NOTES; i++)
 	{
+<<<<<<< Updated upstream
+=======
+		Note::visible[i] = (1.0f);
+>>>>>>> Stashed changes
 		notes[i].width = 1.0f;
 		notes[i].height = 1.0f;
 		float x = (float)rand() / (RAND_MAX);
@@ -207,7 +227,13 @@ int main()
 
 		std::vector<float> values;
 
+<<<<<<< Updated upstream
 		memcpy(&transformsFlattened[i * (int)16], head, 64);
+=======
+		memcpy(&Note::flattenedTransforms[i * (int)16], head, 64);
+
+		notes[i].textArea.ID = i + NUM_UI_PANELS;
+>>>>>>> Stashed changes
 		notes[i].textArea.transform = notes[i].transform;
 		notes[i].textArea.transform.position -= glm::vec3(notes[i].width, -notes[i].height, 0.0f);
 		notes[i].textArea.width = notes[i].width;
@@ -215,14 +241,18 @@ int main()
 		notes[i].textArea.sampleString = "To dispriz'd coil, and be: to othe mind by a life, and love, and mome of somenterprises calamity opposing end swear, to dream:";
 		notes[i].textArea.IsUI = 0.0f;
 		notes[i].textArea.FillGlobalTextArrays(values);
+<<<<<<< Updated upstream
+=======
+
+
+>>>>>>> Stashed changes
 		resetText[i] = true;
 	}
 
 	//NOTES drawing VAOs and VBOs
-	VAO notesVAO, uiVAO;
-	notesVAO.Init();
-	notesVAO.Bind();
+	VAO uiVAO;
 
+<<<<<<< Updated upstream
 	VBO notesVBO(vertices, sizeof(vertices), GL_STATIC_DRAW);
 	//VBO notesTransformsVBO(offsets.data(), offsets.size());
 	VBO notesTransformsVBO(transformsFlattened.data(), sizeof(float) * transformsFlattened.size(), GL_DYNAMIC_DRAW);
@@ -238,6 +268,26 @@ int main()
 	notesTransformsVBO.Unbind();
 	notesEBO.Unbind();
 
+=======
+	Note::InitVAOsVBOsEBOs(vertices, indices, EXTRA_BUFFER_ALLOCATION);
+
+	for (int i = 0; i < NUM_NOTES; i++)
+	{
+		for (int j = 0; j < notes[i].textArea.glyphTrans.size(); j++)
+		{
+			notes[i].textArea.textIsVisible[i + j] = 1.0f;
+		}
+		MoveNotes(notes, Note::flattenedTransforms, notes[i].transform.position, Note::notesTransformsVBO, Note::notesVisibilityVBO,  i, undoredo);
+		//notesVisible[i] = 0.0f;
+	}
+	Note::notesVisibilityVBO.Bind();
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * notesVisible.size(), notesVisible.data());
+	Note::notesVisibilityVBO.Unbind();
+
+	undoredo.Flush();
+	recordedMovement = false;
+
+>>>>>>> Stashed changes
 	//UI DRAWING VAOs and VBOs
 	uiVAO.Init();
 	uiVAO.Bind();
@@ -403,7 +453,7 @@ int main()
 		int lastSelectedEntityLoc = glGetUniformLocation(notesShaderProgram.ID, "lastSelectedEntity");
 		glUniform1i(lastSelectedEntityLoc, lastSelectedEntity);
 
-		notesVAO.Bind();
+		Note::notesVAO.Bind();
 		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, NUM_NOTES);
 
 		uiShaderProgram.Activate();
@@ -435,6 +485,15 @@ int main()
 			//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
 		else if (Input::doubleClicked && lastSelectedEntity != -1) {
+<<<<<<< Updated upstream
+=======
+
+			int i = lastSelectedEntity - NUM_UI_PANELS;
+			MoveNotes(notes, Note::flattenedTransforms,
+				notes[i].transform.position - glm::vec3(0.0f, 0.0f, 0.4f),
+				Note::notesTransformsVBO, Note::notesVisibilityVBO, i, undoredo, false);
+
+>>>>>>> Stashed changes
 			lastSelectedEntity = -1;
 			//resetText = true;
 		}
@@ -449,7 +508,22 @@ int main()
 				MouseData mp = { Input::mouseX, Input::mouseY
 								, Input::leftMouseButtonPressed, Input::rightMouseButtonPressed
 								, Input::leftMouseButtonReleased, Input::rightMouseButtonReleased};
+<<<<<<< Updated upstream
 				ui_manager.ManageUI(mp, ButtonClickTest, &bcs, lastSelectedUI);
+=======
+				
+				if (lastSelectedUI > 0) {
+					CreateNewNodeButtonStruct cnnbs = { notes, Note::flattenedTransforms, notesVisible, Note::notesVisibilityVBO, lastSelectedEntity };
+					ui_manager.ManageUI(mp, CreateNewNote, &cnnbs, lastSelectedUI);
+				}
+				else if(lastSelectedEntityDelete > -1){
+					//Debug_Log("Deleting..");
+					int i = lastSelectedEntityDelete;
+					DeleteNoteInfo dNI = { lastSelectedEntityDelete, notes, notesVisible,  Note::notesVisibilityVBO };
+					ui_manager.ManageUI(mp, DeleteNote, &dNI, lastSelectedUI);
+
+				}
+>>>>>>> Stashed changes
 
 				//std::cout << Input::leftMouseButtonPressed << std::endl;
 
@@ -497,6 +571,7 @@ int main()
 			glm::vec3 point = rayOrigin + rayDirection * t;
 			point.z = pointOnPlane.z;
 
+<<<<<<< Updated upstream
 			int i = lastSelectedEntity - NUM_UI_PANELS;
 			notes[i].transform.position = glm::vec3(point);
 			float* curNewTrans = glm::value_ptr(*notes[i].transform.CalculateTransformMatr());
@@ -529,6 +604,9 @@ int main()
 			TextArea::textTransformsVBO.Bind();
 			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * TextArea::textTransformsFlattened.size(), TextArea::textTransformsFlattened.data());
 			TextArea::textTransformsVBO.Unbind();
+=======
+			MoveNotes(notes, Note::flattenedTransforms , point, Note::notesTransformsVBO, Note::notesVisibilityVBO, lastSelectedEntity - NUM_UI_PANELS, undoredo);
+>>>>>>> Stashed changes
 		}
 
 		TextArea::textShader->Activate();
@@ -546,6 +624,53 @@ int main()
 		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, TextArea::totalGlyphs);
 		//glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, 1);
 
+<<<<<<< Updated upstream
+=======
+		glBindFramebuffer(GL_FRAMEBUFFER, camera.blurFBO);
+		//glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+		//glStencilMask(0x00); // disable writing to the stencil buffer
+		//glDisable(GL_DEPTH_TEST);
+		glEnable(GL_DEPTH_TEST);
+
+		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		blurShader.Activate();
+		persprojLoc = glGetUniformLocation(blurShader.ID, "perspectiveProj");
+		glUniformMatrix4fv(persprojLoc, 1, GL_FALSE, glm::value_ptr(camera.projection));
+		cameraTransLoc = glGetUniformLocation(blurShader.ID, "cameraTrans");
+		glUniformMatrix4fv(cameraTransLoc, 1, GL_FALSE, glm::value_ptr(*camera.trans.CalculateTransformMatr()));
+
+		/*for (int i = 0; i < NUM_NOTES; i++)
+		{
+			notes[i].transform.scale *= glm::vec3(1.0f);
+
+			float* head = glm::value_ptr(*notes[i].transform.CalculateTransformMatr());
+			memcpy(&notesTransformsFlattened[i * (int)16], head, 64);
+		}
+		notesTransformsVBO.Bind();
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * notesTransformsFlattened.size(), notesTransformsFlattened.data());
+		notesTransformsVBO.Unbind();*/
+
+
+		Note::notesVAO.Bind();
+		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, NUM_NOTES);
+		glActiveTexture(GL_TEXTURE0);
+		/*glStencilMask(0xFF);
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);*/
+
+		//for (int i = 0; i < NUM_NOTES; i++)
+		//{
+		//	notes[i].transform.scale /= glm::vec3(1.0f);
+
+		//	float* head = glm::value_ptr(*notes[i].transform.CalculateTransformMatr());
+		//	memcpy(&notesTransformsFlattened[i * (int)16], head, 64);
+		//}
+		//notesTransformsVBO.Bind();
+		//glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * notesTransformsFlattened.size(), notesTransformsFlattened.data());
+		//notesTransformsVBO.Unbind();
+
+>>>>>>> Stashed changes
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glDisable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
@@ -567,7 +692,7 @@ int main()
 
 	}
 
-	notesVAO.Delete();
+	Note::notesVAO.Delete();
 	notesShaderProgram.Delete();
 	uiVAO.Delete();
 	uiShaderProgram.Delete();
