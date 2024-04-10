@@ -48,6 +48,9 @@ int NUM_UI_PANELS = 5;
 
 int EXTRA_BUFFER_ALLOCATION = 100;
 
+std::vector<float> Note::flattenedTransforms(NUM_NOTES);
+std::vector<float> Note::visible(NUM_NOTES);
+
 std::vector<int> linesSelectedEntities;
 std::vector<int> newLinesSelectedEntities;
 std::vector<int> deleteLinesSelectedEntities;
@@ -437,40 +440,15 @@ int main()
 		notes[i].textArea.IsUI = 0.0f;
 		notes[i].textArea.FillGlobalTextArrays(values);
 
-		for (int i = 0; i < 3; i++)
-		{
-			int randNoteId = rand() % NUM_NOTES;
-			notes[i].connectedToNotes.push_back(randNoteId);
-		}
-
-
 		resetText[i] = true;
 		notesVisible[i] = 1.0f;
 	}
 
 	//NOTES drawing VAOs and VBOs
-	VAO notesVAO, uiVAO;
-	notesVAO.Init();
-	notesVAO.Bind();
+	VAO uiVAO;
 
-	VBO notesVBO(vertices, sizeof(vertices), GL_STATIC_DRAW);
-	//VBO notesTransformsVBO(offsets.data(), offsets.size());
-	VBO notesTransformsVBO(notesTransformsFlattened.data(), sizeof(float) * notesTransformsFlattened.size() + EXTRA_BUFFER_ALLOCATION * 16 * sizeof(float), GL_DYNAMIC_DRAW);
-	VBO notesVisibilityVBO(notesVisible.data(), sizeof(float) * notesVisible.size() + EXTRA_BUFFER_ALLOCATION * sizeof(float), GL_DYNAMIC_DRAW);
-	//std::cout << notesTransformsFlattened.size() / 16 << std::endl;
-	notesTransformsVBO.Bind();
+	Note::InitVAOsVBOsEBOs(vertices, indices, EXTRA_BUFFER_ALLOCATION);
 	
-	EBO notesEBO(indices, sizeof(indices));
-	notesVAO.LinkTransformAttrib(notesTransformsVBO, 1);
-	notesVAO.LinkAttrib(notesVBO, 0, 3, GL_FLOAT, 3 * sizeof(float), (void*)0);
-	notesVAO.LinkAttrib(notesVisibilityVBO, 5, 1, GL_FLOAT, sizeof(float), (void*)0);
-	glVertexAttribDivisor(5, 1);
-
-	notesVAO.Unbind();
-	notesVBO.Unbind();
-	notesTransformsVBO.Unbind();
-	notesVisibilityVBO.Unbind();
-	notesEBO.Unbind();
 
 	for (int i = 0; i < NUM_NOTES; i++)
 	{
@@ -478,12 +456,12 @@ int main()
 		{
 			notes[i].textArea.textIsVisible[i + j] = 1.0f;
 		}
-		MoveNotes(notes, notesTransformsFlattened, notes[i].transform.position, notesTransformsVBO, notesVisibilityVBO,  i, undoredo);
+		MoveNotes(notes, notesTransformsFlattened, notes[i].transform.position, Note::notesflattenedTransformsVBO, Note::notesVisibileVBO,  i, undoredo);
 		//notesVisible[i] = 0.0f;
 	}
-	notesVisibilityVBO.Bind();
+	Note::notesVisibileVBO.Bind();
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * notesVisible.size(), notesVisible.data());
-	notesVisibilityVBO.Unbind();
+	Note::notesVisibileVBO.Unbind();
 
 	undoredo.Flush();
 	recordedMovement = false;
@@ -714,7 +692,7 @@ int main()
 		glUniform1i(lastClickedEntityLoc, lastSelectedEntityDelete);
 		
 
-		notesVAO.Bind();
+		Note::notesVAO.Bind();
 		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, NUM_NOTES);
 
 		uiShaderProgram.Activate();
@@ -747,7 +725,7 @@ int main()
 			int i = lastSelectedEntity - NUM_UI_PANELS;
 			MoveNotes(notes, notesTransformsFlattened,
 				notes[i].transform.position - glm::vec3(0.0f, 0.0f, 0.4f),
-				notesTransformsVBO, notesVisibilityVBO, i, undoredo, false);
+				Note::notesflattenedTransformsVBO, Note::notesVisibileVBO, i, undoredo, false);
 
 			lastSelectedEntity = -1;
 			recordedMovement = false;
@@ -907,13 +885,13 @@ int main()
 								, Input::leftMouseButtonReleased, Input::rightMouseButtonReleased};
 				
 				if (lastSelectedUI > 0) {
-					CreateNewNodeButtonStruct cnnbs = { notes, notesTransformsFlattened, notesVisible, notesVisibilityVBO, lastSelectedEntity };
+					CreateNewNodeButtonStruct cnnbs = { notes, notesTransformsFlattened, notesVisible, Note::notesflattenedTransformsVBO, lastSelectedEntity };
 					ui_manager.ManageUI(mp, CreateNewNote, &cnnbs, lastSelectedUI);
 				}
 				else if(lastSelectedEntityDelete > -1){
 					//Debug_Log("Deleting..");
 					int i = lastSelectedEntityDelete;
-					DeleteNoteInfo dNI = { lastSelectedEntityDelete, notes, notesVisible,  notesVisibilityVBO };
+					DeleteNoteInfo dNI = { lastSelectedEntityDelete, notes, notesVisible,  Note::notesVisibileVBO };
 					ui_manager.ManageUI(mp, DeleteNote, &dNI, lastSelectedUI);
 
 				}
@@ -964,7 +942,7 @@ int main()
 			glm::vec3 point = rayOrigin + rayDirection * t;
 			point.z = pointOnPlane.z;
 
-			MoveNotes(notes, notesTransformsFlattened, point, notesTransformsVBO, notesVisibilityVBO, lastSelectedEntity - NUM_UI_PANELS,  undoredo);
+			MoveNotes(notes, notesTransformsFlattened, point, Note::notesflattenedTransformsVBO, Note::notesVisibileVBO, lastSelectedEntity - NUM_UI_PANELS,  undoredo);
 		}
 
 		TextArea::textShader->Activate();
@@ -1010,7 +988,7 @@ int main()
 		notesTransformsVBO.Unbind();*/
 
 
-		notesVAO.Bind();
+		Note::notesVAO.Bind();
 		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, NUM_NOTES);
 		glActiveTexture(GL_TEXTURE0);
 		/*glStencilMask(0xFF);
@@ -1061,7 +1039,7 @@ int main()
 		frame++;
 	}
 
-	notesVAO.Delete();
+	Note::notesVAO.Delete();
 	notesShaderProgram.Delete();
 	uiVAO.Delete();
 	uiShaderProgram.Delete();
