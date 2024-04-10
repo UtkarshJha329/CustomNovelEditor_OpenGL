@@ -24,6 +24,8 @@
 
 #include "UndoRedo.h"
 
+#include "nlohmann/json.hpp"
+using json = nlohmann::json;
 
 #define MAIN_WINDOW_WIDTH 800																						// Width of Main Window
 #define MAIN_WINDOW_HEIGHT 600																						// Height of Main Window
@@ -47,6 +49,8 @@ int NUM_UI_PANELS = 5;
 int EXTRA_BUFFER_ALLOCATION = 100;
 
 std::vector<int> linesSelectedEntities;
+std::vector<int> newLinesSelectedEntities;
+std::vector<int> deleteLinesSelectedEntities;
 
 // Vertices coordinates
 float vertices[] =
@@ -750,26 +754,46 @@ int main()
 			glReadBuffer(GL_COLOR_ATTACHMENT2);
 			glReadPixels(Input::mouseX, MAIN_WINDOW_HEIGHT - Input::mouseY, 1, 1, GL_RED_INTEGER, GL_INT, &outValue);
 
-			if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+			if (outValue > NUM_UI_PANELS - 1 && outValue < NUM_UI_PANELS + NUM_NOTES) {
+				if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
 
-				if (outValue > NUM_UI_PANELS - 1 && outValue < NUM_UI_PANELS + NUM_NOTES) {
-					linesSelectedEntities.push_back(outValue - NUM_UI_PANELS);
-					//std::cout << linesSelectedEntities.size() << std::endl;
+					newLinesSelectedEntities.push_back(outValue - NUM_UI_PANELS);
 				}
-			}
-			else {
-				/*linesSelectedEntities.clear();
-				linePoints.clear();*/
+				else if (glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS) {
 
-				if (outValue > NUM_UI_PANELS - 1 && outValue < NUM_UI_PANELS + NUM_NOTES) {
+					deleteLinesSelectedEntities.push_back(outValue - NUM_UI_PANELS);
+				}
+				else {
 					lastSelectedEntityDelete = outValue;
 				}
-				else if(outValue >= NUM_NOTES + NUM_UI_PANELS) {
-					lastSelectedEntityDelete = -1;
-				}
-
-
+			}			
+			else  if (outValue >= NUM_NOTES + NUM_UI_PANELS) {
+				lastSelectedEntityDelete = -1;
 			}
+		}
+
+		if (newLinesSelectedEntities.size() == 2) {
+			linesSelectedEntities.push_back(newLinesSelectedEntities[0]);
+			linesSelectedEntities.push_back(newLinesSelectedEntities[1]);
+
+			newLinesSelectedEntities.clear();
+		}
+
+		if (deleteLinesSelectedEntities.size() == 2) {
+
+			for (int i = 0; i + 1 < linesSelectedEntities.size(); i++)
+			{
+				if (linesSelectedEntities[i] == deleteLinesSelectedEntities[0] && linesSelectedEntities[i + 1] == deleteLinesSelectedEntities[1]) {
+					linesSelectedEntities.erase(linesSelectedEntities.begin() + i);
+					linesSelectedEntities.erase(linesSelectedEntities.begin() + i + 1);
+				}
+				else if (linesSelectedEntities[i] == deleteLinesSelectedEntities[1] && linesSelectedEntities[i + 1] == deleteLinesSelectedEntities[0]) {
+					linesSelectedEntities.erase(linesSelectedEntities.begin() + i + 1);
+					linesSelectedEntities.erase(linesSelectedEntities.begin() + i);
+				}
+			}
+
+			deleteLinesSelectedEntities.clear();
 
 		}
 
