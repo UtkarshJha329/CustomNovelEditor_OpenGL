@@ -781,6 +781,23 @@ int main()
 			linesSelectedEntities.push_back(newLinesSelectedEntities[0]);
 			linesSelectedEntities.push_back(newLinesSelectedEntities[1]);
 
+			Links* cl = new Links{
+				linesSelectedEntities,
+				newLinesSelectedEntities[0],
+				newLinesSelectedEntities[1]
+			};
+
+			ActionFunc af;
+			af.actionType = Action::UndoCreationOrDeletionOfLinks;
+			af.redoFunction = RedoLinesBetweenEntities;
+			af.undoFunction = UndoLinesBetweenEntities;
+
+			ActionArgs aa = {
+				cl
+			};
+
+			UndoRedo::AddAction(af, aa);
+
 			newLinesSelectedEntities.clear();
 		}
 
@@ -789,14 +806,31 @@ int main()
 			for (int i = 0; i + 1 < linesSelectedEntities.size(); i++)
 			{
 				if (linesSelectedEntities[i] == deleteLinesSelectedEntities[0] && linesSelectedEntities[i + 1] == deleteLinesSelectedEntities[1]) {
-					linesSelectedEntities.erase(linesSelectedEntities.begin() + i);
 					linesSelectedEntities.erase(linesSelectedEntities.begin() + i + 1);
+					linesSelectedEntities.erase(linesSelectedEntities.begin() + i);
 				}
 				else if (linesSelectedEntities[i] == deleteLinesSelectedEntities[1] && linesSelectedEntities[i + 1] == deleteLinesSelectedEntities[0]) {
 					linesSelectedEntities.erase(linesSelectedEntities.begin() + i + 1);
 					linesSelectedEntities.erase(linesSelectedEntities.begin() + i);
 				}
 			}
+
+			Links* cl = new Links{
+				linesSelectedEntities,
+				deleteLinesSelectedEntities[0],
+				deleteLinesSelectedEntities[1]
+			};
+
+			ActionFunc af;
+			af.actionType = Action::UndoCreationOrDeletionOfLinks;
+			af.redoFunction = UndoLinesBetweenEntities;
+			af.undoFunction = RedoLinesBetweenEntities;
+
+			ActionArgs aa = {
+				cl
+			};
+
+			UndoRedo::AddAction(af, aa);
 
 			deleteLinesSelectedEntities.clear();
 

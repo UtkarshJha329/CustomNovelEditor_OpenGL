@@ -10,8 +10,8 @@
 enum class Action {
 
 	ChangedNotePosition,
-	UndoCreationOrDeletionOfNote
-
+	UndoCreationOrDeletionOfNote,
+	UndoCreationOrDeletionOfLinks
 };
 
 class ActionArgs {
@@ -197,4 +197,34 @@ void ChangeNoteVisibility(void* _cnv) {
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * cnv->notesVisible.size(), cnv->notesVisible.data());
 	cnv->notesVisibilityVBO.Unbind();
 
+}
+
+struct Links {
+	std::vector<int>& linesSelectedEntities;
+	int entityA;
+	int entityB;
+};
+
+void UndoLinesBetweenEntities(void* _links) {
+
+	Links* links = (Links*)_links;
+
+	for (int i = 0; i + 1 < links->linesSelectedEntities.size(); i++)
+	{
+		if ((links->linesSelectedEntities[i] == links->entityA && links->linesSelectedEntities[i + 1] == links->entityB)
+			|| (links->linesSelectedEntities[i] == links->entityB && links->linesSelectedEntities[i + 1] == links->entityA))
+		{
+			links->linesSelectedEntities.erase(links->linesSelectedEntities.begin() + i + 1);
+			links->linesSelectedEntities.erase(links->linesSelectedEntities.begin() + i);
+		}
+	}
+
+}
+
+void RedoLinesBetweenEntities(void* _links) {
+
+	Links* links = (Links*)_links;
+
+	links->linesSelectedEntities.push_back(links->entityA);
+	links->linesSelectedEntities.push_back(links->entityB);
 }
