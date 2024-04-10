@@ -65,7 +65,7 @@ void Shader::Init(const char* vertexFile, const char* fragmentFile, const char* 
 		glShaderSource(geometryShader, 1, &gShaderCode, NULL);
 		glCompileShader(geometryShader);
 		compileErrors(geometryShader, "GEOMETRY");
-		std::cout << "COMPILED GEOMETRY SHADER SUCCESSFULLY!!" << std::endl;
+		//std::cout << "COMPILED GEOMETRY SHADER SUCCESSFULLY!!" << std::endl;
 	}
 
 	// Create Shader Program Object and get its reference

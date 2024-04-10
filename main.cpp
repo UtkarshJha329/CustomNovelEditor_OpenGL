@@ -603,9 +603,14 @@ int main()
 	linesVAO.Unbind();
 	linesPointsVBO.Unbind();
 
+	float timeToBackspaceReset = 0.0f;
+	float backspaceResetTime = 0.1f;
 
 	while (!glfwWindowShouldClose(window))
 	{
+		if (timeToBackspaceReset > 0.0f) {
+			timeToBackspaceReset -= deltaTime;
+		}
 		
 		double currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
@@ -643,7 +648,7 @@ int main()
 			y = false;
 		}
 
-		if (glfwGetKey(window, GLFW_KEY_BACKSPACE) == GLFW_RELEASE) {
+		if (glfwGetKey(window, GLFW_KEY_BACKSPACE) == GLFW_RELEASE || timeToBackspaceReset <= 0.0f) {
 			backspace = false;
 		}
 
@@ -850,6 +855,7 @@ int main()
 				//std::cout << "BACKSPACE!" << std::endl;
 				notes[i].textArea.RemoveLastCharFromTextArea(i);
 				backspace = true;
+				timeToBackspaceReset = backspaceResetTime;
 
 			}
 		}
