@@ -24324,7 +24324,7 @@ class basic_json // NOLINT(cppcoreguidelines-special-member-functions,hicpp-spec
                 while (i < source.size())
                 {
                     // add operations in reverse order to avoid invalid
-                    // indices
+                    // indicies
                     result.insert(result.begin() + end_index, object(
                     {
                         {"op", "remove"},

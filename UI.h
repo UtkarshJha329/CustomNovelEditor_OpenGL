@@ -71,6 +71,43 @@ public:
 
 	}
 
+	inline static VAO uiVAO;
+	inline static VBO uiQuadVBO;
+	inline static VBO uiTransformsVBO;
+	inline static VBO uiVisibleVBO;
+	inline static EBO uiEBO;
+
+	static std::vector<float> ui_transformsFlattened;
+	static std::vector<float> ui_visible;
+
+	static Shader uiShaderProgram;
+
+
+	static void InitVAOsVBOsEBOs(float* vertices, unsigned int* indicies) {
+
+		uiVAO.Init();
+		uiVAO.Bind();
+
+		uiQuadVBO.Init(vertices, sizeof(float) * 12, GL_STATIC_DRAW);
+		uiTransformsVBO.Init(ui_transformsFlattened.data(), sizeof(float) * ui_transformsFlattened.size(), GL_DYNAMIC_DRAW);
+		uiVisibleVBO.Init(ui_visible.data(), sizeof(float) * ui_visible.size(), GL_DYNAMIC_DRAW);
+		uiTransformsVBO.Bind();
+		uiVisibleVBO.Bind();
+
+		uiEBO.Init(indicies, sizeof(unsigned int) * 6);
+		uiVAO.LinkAttrib(uiQuadVBO, 0, 3, GL_FLOAT, 3 * sizeof(float), (void*)0);
+		uiVAO.LinkTransformAttrib(uiTransformsVBO, 1);
+		uiVAO.LinkAttrib(uiVisibleVBO, 5, 1, GL_FLOAT, sizeof(float), (void*)0);
+		uiVisibleVBO.Bind();
+		glVertexAttribDivisor(5, 1);
+		uiVisibleVBO.Unbind();
+
+		uiVAO.Unbind();
+		uiQuadVBO.Unbind();
+		uiTransformsVBO.Unbind();
+		uiEBO.Unbind();
+	}
+
 };
 
 class Button : public UI {

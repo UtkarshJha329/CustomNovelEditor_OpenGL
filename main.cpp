@@ -48,8 +48,12 @@ int NUM_UI_PANELS = 5;
 
 int EXTRA_BUFFER_ALLOCATION = 100;
 
-std::vector<float> Note::flattenedTransforms(NUM_NOTES);
+std::vector<float> Note::flattenedTransforms(NUM_NOTES * 16);
 std::vector<float> Note::visible(NUM_NOTES);
+
+std::vector<float> UI_MANAGER::ui_transformsFlattened(NUM_UI_PANELS * 16);
+std::vector<float> UI_MANAGER::ui_visible(NUM_UI_PANELS);
+Shader UI_MANAGER::uiShaderProgram;
 
 std::vector<int> linesSelectedEntities;
 std::vector<int> newLinesSelectedEntities;
@@ -64,16 +68,8 @@ float vertices[] =
 	-1.0f, 1.0f, 0.0f
 };
 
-float textureCoords[] =
-{
-	 449.0f / 512.0f, (512.0f - 387.0f - 46.0f) / 512.0f,		//bottom left		449.0f / 512.0f, (512.0f - 387.0f + 46.0f) / 512.0f
-	 (449.0f + 49.0f) / 512.0f, (512.0f - 387.0f - 46.0f) / 512.0f,		//bottom right		(449.0f + 49.0f) / 512.0f, (512.0f - 387.0f + 46.0f) / 512.0f
-	 (449.0f + 49.0f) / 512.0f, (512.0f - 387.0f) / 512.0f,		//top right			(449.0f + 49.0f) / 512.0f, (512.0f - 387.0f) / 512.0f
-	 (449.0f) / 512.0f, (512.0f - 387.0f) / 512.0f,		//top left			(449.0f) / 512.0f, (512.0f - 387.0f) / 512.0f
-};
-
 // Indices for vertices order
-unsigned int indices[] =
+unsigned int indicies[] =
 {
 	0, 1, 3,
 	3, 1, 2
@@ -164,7 +160,7 @@ void CreateNewNote(void* args) {
 		//resetText.push_back(true);
 		//a->visible.push_back(1.0f);
 
-		//a->notes[i].textArea.BindVAOsVBOsEBOs(vertices, indices, EXTRA_BUFFER_ALLOCATION);
+		//a->notes[i].textArea.BindVAOsVBOsEBOs(vertices, indicies, EXTRA_BUFFER_ALLOCATION);
 
 	}
 	else {
@@ -217,7 +213,7 @@ void CreateNewNote(void* args) {
 		a->visible.push_back(1.0f);
 
 
-		a->notes[i].textArea.BindVAOsVBOsEBOs(vertices, indices, EXTRA_BUFFER_ALLOCATION);
+		a->notes[i].textArea.BindVAOsVBOsEBOs(vertices, indicies, EXTRA_BUFFER_ALLOCATION);
 
 	}
 
@@ -362,12 +358,9 @@ int main()
 	TextArea::textShader = new Shader("UITextBasic.vert", "UITextBasic.frag");;
 
 #pragma region VBOs and Positions
-	Shader uiShaderProgram("UIBasic.vert", "UIBasic.frag");
+	UI_MANAGER::uiShaderProgram.Init("UIBasic.vert", "UIBasic.frag");
 
-	std::vector<float> ui_transformsFlattened(NUM_UI_PANELS * 16);
 	srand((unsigned int)time(0));
-
-	std::vector<float> ui_visible(NUM_UI_PANELS);
 	std::vector<Button> buttons(NUM_UI_PANELS);
 	float y = -0.8f;
 	for (int i = 0; i < NUM_UI_PANELS; i++)
@@ -381,13 +374,13 @@ int main()
 		float sy = (float)rand() / (RAND_MAX);
 		float sz = (float)rand() / (RAND_MAX);
 		buttons[i].transform.scale = glm::vec3(0.1f);
-		ui_visible[i] = 1.0f;
+		UI_MANAGER::ui_visible[i] = 1.0f;
 
 		float* head = glm::value_ptr(*buttons[i].transform.CalculateTransformMatr());
 
 		std::vector<float> values;
 
-		memcpy(&ui_transformsFlattened[i * (int)16], head, 64);
+		memcpy(&UI_MANAGER::ui_transformsFlattened[i * (int)16], head, 64);
 		buttons[i].init(i);
 		buttons[i].textArea.ID = i;
 		buttons[i].textArea.transform = buttons[i].transform;
@@ -445,9 +438,7 @@ int main()
 	}
 
 	//NOTES drawing VAOs and VBOs
-	VAO uiVAO;
-
-	Note::InitVAOsVBOsEBOs(vertices, indices, EXTRA_BUFFER_ALLOCATION);
+	Note::InitVAOsVBOsEBOs(vertices, indicies, EXTRA_BUFFER_ALLOCATION);
 	
 
 	for (int i = 0; i < NUM_NOTES; i++)
@@ -467,30 +458,11 @@ int main()
 	recordedMovement = false;
 
 	//UI DRAWING VAOs and VBOs
-	uiVAO.Init();
-	uiVAO.Bind();
+	UI_MANAGER::InitVAOsVBOsEBOs(vertices, indicies);
 
-	VBO uiVBO(vertices, sizeof(vertices), GL_STATIC_DRAW);
-	VBO uiTransformsVBO(ui_transformsFlattened.data(), sizeof(float) * ui_transformsFlattened.size(), GL_DYNAMIC_DRAW);
-	VBO uiVisibleVBO(ui_visible.data(), sizeof(float) * ui_visible.size(), GL_DYNAMIC_DRAW);
-	uiTransformsVBO.Bind();
-	uiVisibleVBO.Bind();
-
-	EBO uiEBO(indices, sizeof(indices));
-	uiVAO.LinkAttrib(uiVBO, 0, 3, GL_FLOAT, 3 * sizeof(float), (void*)0);
-	uiVAO.LinkTransformAttrib(uiTransformsVBO, 1);
-	uiVAO.LinkAttrib(uiVisibleVBO, 5, 1, GL_FLOAT,  sizeof(float), (void*)0);
-	uiVisibleVBO.Bind();
-	glVertexAttribDivisor(5, 1);
-	uiVisibleVBO.Unbind();
-
-	uiVAO.Unbind();
-	uiVBO.Unbind();
-	uiTransformsVBO.Unbind();
-	uiEBO.Unbind();
 #pragma endregion
 
-	TextArea::BindVAOsVBOsEBOs(vertices, indices, EXTRA_BUFFER_ALLOCATION);
+	TextArea::BindVAOsVBOsEBOs(vertices, indicies, EXTRA_BUFFER_ALLOCATION);
 
 #pragma endregion
 
@@ -695,13 +667,13 @@ int main()
 		Note::notesVAO.Bind();
 		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, NUM_NOTES);
 
-		uiShaderProgram.Activate();
-		int uiEntitiesCountLoc = glGetUniformLocation(uiShaderProgram.ID, "entitiesCount");
+		UI_MANAGER::uiShaderProgram.Activate();
+		int uiEntitiesCountLoc = glGetUniformLocation(UI_MANAGER::uiShaderProgram.ID, "entitiesCount");
 		glUniform1f(uiEntitiesCountLoc, NUM_UI_PANELS + NUM_NOTES);
-		int UIlastSelectedEntityLoc = glGetUniformLocation(uiShaderProgram.ID, "lastSelectedUI");
+		int UIlastSelectedEntityLoc = glGetUniformLocation(UI_MANAGER::uiShaderProgram.ID, "lastSelectedUI");
 		glUniform1i(UIlastSelectedEntityLoc, lastSelectedUI);
 
-		uiVAO.Bind();
+		UI_MANAGER::uiVAO.Bind();
 
 		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, NUM_UI_PANELS);
 
@@ -879,7 +851,7 @@ int main()
 			if (entityFromTexture < NUM_UI_PANELS) {
 				lastSelectedUI = entityFromTexture;
 				
-				ButtonClickStruct bcs = { ui_visible, lastSelectedUI };
+				ButtonClickStruct bcs = { UI_MANAGER::ui_visible, lastSelectedUI };
 				MouseData mp = { Input::mouseX, Input::mouseY
 								, Input::leftMouseButtonPressed, Input::rightMouseButtonPressed
 								, Input::leftMouseButtonReleased, Input::rightMouseButtonReleased};
@@ -898,9 +870,9 @@ int main()
 
 				//std::cout << Input::leftMouseButtonPressed << std::endl;
 
-				uiVisibleVBO.Bind();
-				glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * ui_visible.size(), ui_visible.data());
-				uiVisibleVBO.Unbind();
+				UI_MANAGER::uiVisibleVBO.Bind();
+				glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * UI_MANAGER::ui_visible.size(), UI_MANAGER::ui_visible.data());
+				UI_MANAGER::uiVisibleVBO.Unbind();
 
 				//std::cout << "UI SELECTED : " << lastSelectedUI << std::endl;
 				//ui_manager.ManageUI(mouseX, mouseY, leftClick, rightClick, leftRelease, rightRelease, lastSelectedUI);
@@ -1041,8 +1013,8 @@ int main()
 
 	Note::notesVAO.Delete();
 	notesShaderProgram.Delete();
-	uiVAO.Delete();
-	uiShaderProgram.Delete();
+	UI_MANAGER::uiVAO.Delete();
+	UI_MANAGER::uiShaderProgram.Delete();
 	//textVAO.Delete();
 	TextArea::textVAO.Delete();
 	TextArea::textShader->Delete();
