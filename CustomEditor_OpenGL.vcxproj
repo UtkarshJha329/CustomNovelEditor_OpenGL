@@ -176,19 +176,21 @@
     <None Include="default.vert" />
     <None Include="Blur.frag" />
     <None Include="Blur.vert" />
-    <None Include="UITextBasic.frag" />
-    <None Include="UITextBasic.vert" />
+    <None Include="TextBasic.frag" />
+    <None Include="TextBasic.vert" />
     <None Include="UIBasic.frag" />
     <None Include="UIBasic.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="NoteManipulation.h" />
+    <ClInclude Include="Drawing.h" />
     <ClInclude Include="EBO.h" />
     <ClInclude Include="BMFontReader.h" />
     <ClInclude Include="FTPFontReader.h" />
     <ClInclude Include="Input.h" />
+    <ClInclude Include="JsonTranslationFunctions.h" />
     <ClInclude Include="Note.h" />
-    <ClInclude Include="NoteManipulation.h" />
     <ClInclude Include="ShaderClass.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="TextArea.h" />

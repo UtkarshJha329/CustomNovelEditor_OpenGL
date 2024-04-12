@@ -5,6 +5,18 @@
 
 #include "Transform.h"
 #include "ShaderClass.h"
+#include "Input.h"
+
+float screenRenderQuadVertices[] = {
+	// positions   // texCoords
+	-1.0f,  1.0f,  0.0f, 1.0f,
+	-1.0f, -1.0f,  0.0f, 0.0f,
+	 1.0f, -1.0f,  1.0f, 0.0f,
+
+	-1.0f,  1.0f,  0.0f, 1.0f,
+	 1.0f, -1.0f,  1.0f, 0.0f,
+	 1.0f,  1.0f,  1.0f, 1.0f
+};
 
 class Camera {
 
@@ -26,6 +38,8 @@ public:
 	Shader blurShaderProgram;
 
 	glm::mat4 projection;
+
+	unsigned int screenRectVAO, screenRectVBO;
 
 	void InitCamera(float width, float height) {
 		glGenFramebuffers(1, &FBO);
@@ -100,6 +114,56 @@ public:
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		blurShaderProgram.Init("BlurPass.vert", "BlurPass.frag");
+
+		projection = glm::perspective(glm::radians(45.0f), float(width) / height, 0.1f, 1000.0f);
+
+	
+		glGenVertexArrays(1, &screenRectVAO);
+		glGenBuffers(1, &screenRectVBO);
+		glBindVertexArray(screenRectVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, screenRectVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 24, screenRenderQuadVertices, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
 	}
 
+	static void CameraMovement(Camera& camera, GLFWwindow* window, double deltaTime, float mouseDeltaX, float mouseDeltaY, float mouseSensitivity) {
+		if (Input::rightMouseButtonHeld) {
+
+			const float cameraSpeed = 2.5f * (float)deltaTime;
+			if (Input::KeyHeld(window, KeyCode::W))
+				camera.trans.position += cameraSpeed * camera.trans.front;
+			if (Input::KeyHeld(window, KeyCode::S))
+				camera.trans.position -= cameraSpeed * camera.trans.front;
+			if (Input::KeyHeld(window, KeyCode::A))
+				camera.trans.position -= cameraSpeed * camera.trans.right;
+			if (Input::KeyHeld(window, KeyCode::D))
+				camera.trans.position += cameraSpeed * camera.trans.right;
+
+			camera.trans.rotation.y -= (mouseDeltaX * mouseSensitivity * (float)deltaTime);
+			camera.trans.rotation.x -= (mouseDeltaY * -mouseSensitivity * (float)deltaTime);
+
+
+			if (camera.trans.rotation.x > 89.0f)
+				camera.trans.rotation.x = 89.0f;
+			if (camera.trans.rotation.x < -89.0f)
+				camera.trans.rotation.x = -89.0f;
+		}
+		else {
+			const float cameraSpeed = 2.5f * (float)deltaTime;
+			if (Input::KeyHeld(window, KeyCode::UP_ARROW))
+				camera.trans.position += cameraSpeed * camera.trans.up;
+			if (Input::KeyHeld(window, KeyCode::DOWN_ARROW))
+				camera.trans.position -= cameraSpeed * camera.trans.up;
+			if (Input::KeyHeld(window, KeyCode::LEFT_ARRORW))
+				camera.trans.position -= cameraSpeed * camera.trans.right;
+			if (Input::KeyHeld(window, KeyCode::RIGHT_ARROW))
+				camera.trans.position += cameraSpeed * camera.trans.right;
+
+		}
+
+	}
 };

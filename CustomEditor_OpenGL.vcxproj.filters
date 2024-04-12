@@ -62,10 +62,10 @@
     <None Include="UIBasic.vert">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="UITextBasic.vert">
+    <None Include="TextBasic.vert">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="UITextBasic.frag">
+    <None Include="TextBasic.frag">
       <Filter>Resource Files</Filter>
     </None>
     <None Include="BlurPass.frag">
@@ -131,6 +131,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UndoRedo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Drawing.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonTranslationFunctions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="NoteManipulation.h">

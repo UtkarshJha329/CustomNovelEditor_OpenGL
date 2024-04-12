@@ -6,6 +6,7 @@
 #include "Input.h"
 #include "Transform.h"
 #include "TextArea.h"
+#include "Note.h"
 
 enum class Action {
 
@@ -83,121 +84,6 @@ private:
 	inline static std::vector<ActionFunc> actions;
 	inline static std::vector<ActionArgs> actionArgs;
 };
-
-struct MousePickingMoving {
-	glm::vec3 oldNotesPos;
-	glm::vec3 oldTextAreaPos;
-	glm::vec3 newNotesPos;
-	glm::vec3 newTextAreaPos;
-	int entity;
-	std::vector<Note>& notes;
-	std::vector<float>& notesTransformsFlattened;
-	VBO& notesTransformsVBO;
-	VBO& textAreaTransformsVBO;
-	glm::vec3 offset;
-
-};
-
-void UndoMousePickingMoving(void* _mpm) {
-
-	MousePickingMoving* mpm = (MousePickingMoving*)_mpm;
-
-	int i = mpm->entity;
-	
-	mpm->newTextAreaPos = mpm->notes[i].textArea.transform.position;
-	mpm->newNotesPos = mpm->notes[i].transform.position;
-
-	mpm->notes[i].transform.position = mpm->oldNotesPos;
-	float* curNewTrans = glm::value_ptr(*mpm->notes[i].transform.CalculateTransformMatr());
-	memcpy(&mpm->notesTransformsFlattened[i * (int)16], curNewTrans, 64);
-
-	mpm->notesTransformsVBO.Bind();
-	glBufferSubData(GL_ARRAY_BUFFER, i * 16 * sizeof(float), sizeof(float) * 16, curNewTrans);
-	mpm->notesTransformsVBO.Unbind();
-
-	
-	const int start = mpm->notes[i].textArea.flattenedTransformStartIndex;
-	const int end = mpm->notes[i].textArea.flattenedTransformEndIndex;
-
-	glm::vec3 offset = mpm->oldTextAreaPos - mpm->notes[i].textArea.transform.position;
-	mpm->notes[i].textArea.transform.position = mpm->oldTextAreaPos;
-
-	std::vector<float> values;
-	mpm->notes[i].textArea.FillGlobalTextArrays(values, offset, start, end);
-
-	const float arraySize = mpm->notes[i].textArea.glyphTrans.size() * 16;
-
-	mpm->textAreaTransformsVBO.Bind();
-	glBufferSubData(GL_ARRAY_BUFFER, start * sizeof(float), sizeof(float) * arraySize, &mpm->notes[i].textArea.textTransformsFlattened[start]);
-	mpm->textAreaTransformsVBO.Unbind();
-}
-
-void RedoMousePickingMoving(void* _mpm) {
-
-	MousePickingMoving* mpm = (MousePickingMoving*)_mpm;
-
-	int i = mpm->entity;
-	mpm->notes[i].transform.position = mpm->newNotesPos;
-	float* curNewTrans = glm::value_ptr(*mpm->notes[i].transform.CalculateTransformMatr());
-	memcpy(&mpm->notesTransformsFlattened[i * (int)16], curNewTrans, 64);
-
-	/*float newTrans[16];
-	memcpy(&newTrans[0], curNewTrans, 64);*/
-
-	mpm->notesTransformsVBO.Bind();
-	glBufferSubData(GL_ARRAY_BUFFER, i * 16 * sizeof(float), sizeof(float) * 16, curNewTrans);
-	mpm->notesTransformsVBO.Unbind();
-
-	const int start = mpm->notes[i].textArea.flattenedTransformStartIndex;
-	const int end = mpm->notes[i].textArea.flattenedTransformEndIndex;
-
-	glm::vec3 offset = mpm->newTextAreaPos - mpm->notes[i].textArea.transform.position;
-	mpm->notes[i].textArea.transform.position = mpm->newTextAreaPos;
-
-	std::vector<float> values;
-	mpm->notes[i].textArea.FillGlobalTextArrays(values, offset, start, end);
-
-	const float arraySize = mpm->notes[i].textArea.glyphTrans.size() * 16;
-
-	mpm->textAreaTransformsVBO.Bind();
-	glBufferSubData(GL_ARRAY_BUFFER, start * sizeof(float), sizeof(float) * arraySize, &mpm->notes[i].textArea.textTransformsFlattened[start]);
-	mpm->textAreaTransformsVBO.Unbind();
-
-}
-
-struct ChangeVisibility {
-	std::vector<Note>& notes;
-	std::vector<float>& notesVisible;
-	std::vector<int>& deletedNotes;
-	VBO& notesVisibilityVBO;
-	int entityToChange;
-	int num_ui_panels;
-};
-
-void ChangeNoteVisibility(void* _cnv) {
-
-	ChangeVisibility* cnv = (ChangeVisibility*)_cnv;
-
-	cnv->notes[cnv->entityToChange - cnv->num_ui_panels].textArea.FlipVisibility(cnv->entityToChange);
-
-	float curValue = cnv->notesVisible[cnv->entityToChange - cnv->num_ui_panels];
-	if(curValue == 1.0f)
-	{
-		cnv->notesVisible[cnv->entityToChange - cnv->num_ui_panels] = 0.0f;
-	}
-	else {
-		cnv->notesVisible[cnv->entityToChange - cnv->num_ui_panels] = 1.0f;
-		if (cnv->deletedNotes.size() > 0) {
-			cnv->deletedNotes.pop_back();
-		}
-	}
-	//Debug_Log("Deleted Note: " << i);
-
-	cnv->notesVisibilityVBO.Bind();
-	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * cnv->notesVisible.size(), cnv->notesVisible.data());
-	cnv->notesVisibilityVBO.Unbind();
-
-}
 
 struct Links {
 	std::vector<int>& linesSelectedEntities;
