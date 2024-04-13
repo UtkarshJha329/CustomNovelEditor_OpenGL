@@ -44,7 +44,7 @@ public:
 	static Shader* textShader;
 	static std::vector<float> textTransformsFlattened;	
 	static std::vector<float> texCoords;
-	static std::vector<float> isUI;
+	static std::vector<float> isUIArray;
 	
 	static std::vector<float> textIsVisible;
 	inline static std::vector<float> individualLengths;
@@ -105,7 +105,7 @@ public:
 
 		auto curGlyph = glyphsMap[' '];
 
-		isUI[currentLastGlyphIndex] = IsUI;
+		isUIArray[currentLastGlyphIndex] = IsUI;
 
 		texCoords[currentLastGlyphIndex * 16 + 0] = (curGlyph.x / 512.0f);
 		texCoords[currentLastGlyphIndex * 16 + 1] = ((512.0f - (curGlyph.y + curGlyph.height)) / 512.0f);
@@ -230,10 +230,14 @@ public:
 				}
 			}
 
-			for (int i = 0; i < sampleString.length(); i++)
+			for (int i = 0; i < NUM_CHARS_IN_TEXTAREA; i++)
 			{
 				textIsVisible.push_back(1.0f);
+				//std::cout << textIsVisible.size() << std::endl;
+			}
 
+			for (int i = 0; i < sampleString.length(); i++)
+			{
 				totalGlyphs++;
 				auto curGlyph = glyphsMap[sampleString[i]];
 				//float yOffset = -(curGlyph.height - curGlyph.yOffset) / (2 * 512.0f);
@@ -291,8 +295,8 @@ public:
 					trans.position.z += 0.1f;
 				}
 
-				isUI.push_back(IsUI);
-				//std::cout << isUI.size() << " : " << isUI[isUI.size() - 1] << std::endl;
+				isUIArray.push_back(IsUI);
+				//std::cout << isUIArray.size() << " : " << isUIArray[isUIArray.size() - 1] << std::endl;
 
 				float* head = glm::value_ptr(*trans.CalculateTransformMatr());
 
@@ -336,7 +340,7 @@ public:
 	}
 
 	void ChangeText(const std::string& newText, int start) {
-		
+
 		int currentIndex = (start + 5) * NUM_CHARS_IN_TEXTAREA;
 
 		sampleString = sampleString.substr(0, individualLengths[start + 5]);
@@ -433,7 +437,7 @@ public:
 				trans.position.z += 0.1f;
 			}
 
-			isUI[currentIndex + i] = IsUI;
+			isUIArray[currentIndex + i] = IsUI;
 
 			float* head = glm::value_ptr(*trans.CalculateTransformMatr());
 
@@ -492,7 +496,7 @@ public:
 		//Text RENDERING UI
 		textVAO.Bind();
 		textVBO.Init(textAreavertices, sizeof(float) * 12, GL_STATIC_DRAW);
-		textIsUIVBO.Init(TextArea::isUI.data(), sizeof(float) * (TextArea::isUI.size() + EXTRA_ALLOCATION), GL_STATIC_DRAW);
+		textIsUIVBO.Init(TextArea::isUIArray.data(), sizeof(float) * (TextArea::isUIArray.size() + EXTRA_ALLOCATION), GL_STATIC_DRAW);
 		//std::cout << "WHILE BINDING SIZE OF TEXCOORDS: " << texCoords.size() << std::endl;
 		textTextureCoordsVBO.Init(TextArea::texCoords.data(), sizeof(float) * (TextArea::texCoords.size() + EXTRA_ALLOCATION * 16), GL_DYNAMIC_DRAW);
 		//std::cout << "WHILE BINDING SIZE OF flattnedTransforms: " << textTransformsFlattened.size() << std::endl;

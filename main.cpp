@@ -37,7 +37,7 @@ using json = nlohmann::json;
 Shader* TextArea::textShader;
 std::vector<float> TextArea::textTransformsFlattened;
 std::vector<float> TextArea::texCoords;
-std::vector<float> TextArea::isUI;
+std::vector<float> TextArea::isUIArray;
 std::vector<float> TextArea::textIsVisible;
 int TextArea::totalGlyphs;
 int TextArea::totalTextAreas;
@@ -87,18 +87,66 @@ void Save() {
 	j["notes"] = Note::notes;
 	j["notes.flattenedTrans"] = Note::flattenedTransforms;
 	j["notes.visible"] = Note::visible;
-	j["notes.resetText"] = resetText;
 
-	j["textArea.flattenedTrans"] = TextArea::textTransformsFlattened;
-	j["textArea.visible"] = TextArea::textIsVisible;
+	j["textArea.individualLengths"] = TextArea::individualLengths;
+	
+	j["lineEntities"] = linesSelectedEntities;
+
 	std::ofstream out("pretty.json");
 
 	out << std::setw(4) << j;
 }
 
-void Load(json& inJson) {
+void Load(json& inJson, UndoRedo& undoredo) {
 	std::ifstream openFile("pretty.json");
 	openFile >> inJson;
+
+
+	Note::notes = inJson["notes"];
+	Note::flattenedTransforms = inJson["notes.flattenedTrans"].get<std::vector<float>>();
+	Note::visible = inJson["notes.visible"].get<std::vector<float>>();
+
+	NUM_NOTES = Note::notes.size();
+
+	TextArea::individualLengths = inJson["textArea.individualLengths"].get<std::vector<float>>();
+
+	linesSelectedEntities = inJson["lineEntities"].get<std::vector<int>>();
+
+	int offset = NUM_UI_PANELS * TextArea::NUM_CHARS_IN_TEXTAREA;
+	TextArea::textTransformsFlattened.erase(TextArea::textTransformsFlattened.begin() + offset * 16, TextArea::textTransformsFlattened.end());
+	TextArea::textIsVisible.erase(TextArea::textIsVisible.begin() + offset, TextArea::textIsVisible.end());
+	TextArea::texCoords.erase(TextArea::texCoords.begin() + offset * 16, TextArea::texCoords.end());
+	TextArea::isUIArray.erase(TextArea::isUIArray.begin() + offset, TextArea::isUIArray.end());
+
+	for (int i = 0; i < NUM_NOTES; i++)
+	{
+		
+		std::vector<float> values;
+
+		Note::notes[i].textArea.width = Note::width;
+		Note::notes[i].textArea.height = Note::height;
+		Note::notes[i].textArea.FillGlobalTextArrays(values);
+
+		resetText.push_back(true);
+	}
+
+	//NOTES drawing VAOs and VBOs
+	Note::InitVAOsVBOsEBOs(vertices, indicies, EXTRA_BUFFER_ALLOCATION);
+
+
+	for (int i = 0; i < NUM_NOTES; i++)
+	{
+		for (int j = 0; j < Note::notes[i].textArea.glyphTrans.size(); j++)
+		{
+			Note::notes[i].textArea.textIsVisible[i * TextArea::NUM_CHARS_IN_TEXTAREA + j] = 1.0f;
+		}
+		MoveNotes(Note::notes, Note::flattenedTransforms, Note::notes[i].transform.position, Note::notesflattenedTransformsVBO, Note::notesVisibileVBO, i, undoredo);
+		//notesVisible[i] = 0.0f;
+	}
+	Note::notesVisibileVBO.Bind();
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * Note::visible.size(), Note::visible.data());
+	Note::notesVisibileVBO.Unbind();
+
 }
 
 int main()
@@ -110,7 +158,6 @@ int main()
 	TextArea::reader = &reader;
 
 	json inJson;
-	Load(inJson);
 
 	glfwInit();
 
@@ -182,69 +229,70 @@ int main()
 	Note::width = 1.0f;
 	Note::height = 1.0f;
 
-	Note::notes = inJson["notes"];
-	Note::flattenedTransforms = inJson["notes.flattenedTrans"].get<std::vector<float>>();
-	Note::visible = inJson["notes.visible"].get<std::vector<float>>();
-	resetText = inJson["notes.resetText"].get<std::vector<bool>>();
+	Load(inJson, undoredo);
 
-	NUM_NOTES = Note::notes.size();
+	//Note::notes = inJson["notes"];
+	//Note::flattenedTransforms = inJson["notes.flattenedTrans"].get<std::vector<float>>();
+	//Note::visible = inJson["notes.visible"].get<std::vector<float>>();
 
-	//j["textArea.flattenedTrans"] = TextArea::textTransformsFlattened;
-	//j["textArea.visible"] = TextArea::textIsVisible;
+	//TextArea::individualLengths = inJson["textArea.individualLengths"].get<std::vector<float>>();
 
-	for (int i = 0; i < NUM_NOTES; i++)
-	{
-		Note::visible[i] = 1.0f;
-
-		//float x = (float)rand() / (RAND_MAX);
-		//float y = (float)rand() / (RAND_MAX);
-		//float z = 10.0f;
-		//Note::notes[i].transform.position = glm::vec3(x, y, z);
-		//Note::notes[i].transform.position.x = (Note::notes[i].transform.position.x - 0.5f) * 2.0f;
-		//Note::notes[i].transform.position.y = (Note::notes[i].transform.position.y - 0.5f) * 2.0f;
-		//Note::notes[i].transform.position.x *= 5.0f;
-		//Note::notes[i].transform.position.y *= 5.0f;
-
-		//Note::notes[i].transform.scale = glm::vec3(Note::width, Note::height, 1.0f);
-
-		//float* head = glm::value_ptr(*Note::notes[i].transform.CalculateTransformMatr());
-
-		//memcpy(&Note::flattenedTransforms[i * (int)16], head, 64);
-		std::vector<float> values;
+	//NUM_NOTES = Note::notes.size();
 
 
-		//Note::notes[i].textArea.ID = i + NUM_UI_PANELS;
-		//Note::notes[i].textArea.transform = Note::notes[i].transform;
-		//Note::notes[i].textArea.transform.position.z -= 0.2f;
-		//notes[i].textArea.transform.position += glm::vec3(-notes[i].width, notes[i].height, 0.0f);
-		Note::notes[i].textArea.width = Note::width;
-		Note::notes[i].textArea.height = Note::height;
-		//Note::notes[i].textArea.sampleString = "To dispriz'd coil, and be: to othe mind by a life, and love, and mome of somenterprises calamity opposing end swear, to dream:";
-		//notes[i].textArea.sampleString = "To dispriz'd coil, and be: to othe mind by a life, and love, and mome of somenterprises";
-		TextArea::individualLengths.push_back(Note::notes[i].textArea.sampleString.length());
-		Note::notes[i].textArea.IsUI = 0.0f;
-		Note::notes[i].textArea.FillGlobalTextArrays(values);
+	//for (int i = 0; i < NUM_NOTES; i++)
+	//{
+	//	//Note::visible[i] = 1.0f;
 
-		resetText[i] = true;
-		//Note::visible[i] = 1.0f;
-	}
+	//	//float x = (float)rand() / (RAND_MAX);
+	//	//float y = (float)rand() / (RAND_MAX);
+	//	//float z = 10.0f;
+	//	//Note::notes[i].transform.position = glm::vec3(x, y, z);
+	//	//Note::notes[i].transform.position.x = (Note::notes[i].transform.position.x - 0.5f) * 2.0f;
+	//	//Note::notes[i].transform.position.y = (Note::notes[i].transform.position.y - 0.5f) * 2.0f;
+	//	//Note::notes[i].transform.position.x *= 5.0f;
+	//	//Note::notes[i].transform.position.y *= 5.0f;
 
-	//NOTES drawing VAOs and VBOs
-	Note::InitVAOsVBOsEBOs(vertices, indicies, EXTRA_BUFFER_ALLOCATION);
-	
+	//	//Note::notes[i].transform.scale = glm::vec3(Note::width, Note::height, 1.0f);
 
-	for (int i = 0; i < NUM_NOTES; i++)
-	{
-		for (int j = 0; j < Note::notes[i].textArea.glyphTrans.size(); j++)
-		{
-			Note::notes[i].textArea.textIsVisible[i * TextArea::NUM_CHARS_IN_TEXTAREA + j] = 1.0f;
-		}
-		MoveNotes(Note::notes, Note::flattenedTransforms, Note::notes[i].transform.position, Note::notesflattenedTransformsVBO, Note::notesVisibileVBO,  i, undoredo);
-		//notesVisible[i] = 0.0f;
-	}
-	Note::notesVisibileVBO.Bind();
-	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * Note::visible.size(), Note::visible.data());
-	Note::notesVisibileVBO.Unbind();
+	//	//float* head = glm::value_ptr(*Note::notes[i].transform.CalculateTransformMatr());
+
+	//	//memcpy(&Note::flattenedTransforms[i * (int)16], head, 64);
+	//	std::vector<float> values;
+
+
+	//	//Note::notes[i].textArea.ID = i + NUM_UI_PANELS;
+	//	//Note::notes[i].textArea.transform = Note::notes[i].transform;
+	//	//Note::notes[i].textArea.transform.position.z -= 0.2f;
+	//	//notes[i].textArea.transform.position += glm::vec3(-notes[i].width, notes[i].height, 0.0f);
+	//	Note::notes[i].textArea.width = Note::width;
+	//	Note::notes[i].textArea.height = Note::height;
+	//	//Note::notes[i].textArea.sampleString = "To dispriz'd coil, and be: to othe mind by a life, and love, and mome of somenterprises calamity opposing end swear, to dream:";
+	//	//notes[i].textArea.sampleString = "To dispriz'd coil, and be: to othe mind by a life, and love, and mome of somenterprises";
+	//	//TextArea::individualLengths.push_back(Note::notes[i].textArea.sampleString.length());
+	//	//Note::notes[i].textArea.IsUI = 0.0f;
+	//	Note::notes[i].textArea.FillGlobalTextArrays(values);
+
+	//	resetText.push_back(true);
+	//	//Note::visible[i] = 1.0f;
+	//}
+
+	////NOTES drawing VAOs and VBOs
+	//Note::InitVAOsVBOsEBOs(vertices, indicies, EXTRA_BUFFER_ALLOCATION);
+	//
+
+	//for (int i = 0; i < NUM_NOTES; i++)
+	//{
+	//	for (int j = 0; j < Note::notes[i].textArea.glyphTrans.size(); j++)
+	//	{
+	//		Note::notes[i].textArea.textIsVisible[i * TextArea::NUM_CHARS_IN_TEXTAREA + j] = 1.0f;
+	//	}
+	//	MoveNotes(Note::notes, Note::flattenedTransforms, Note::notes[i].transform.position, Note::notesflattenedTransformsVBO, Note::notesVisibileVBO,  i, undoredo);
+	//	//notesVisible[i] = 0.0f;
+	//}
+	//Note::notesVisibileVBO.Bind();
+	//glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * Note::visible.size(), Note::visible.data());
+	//Note::notesVisibileVBO.Unbind();
 
 	undoredo.Flush();
 	recordedMovement = false;

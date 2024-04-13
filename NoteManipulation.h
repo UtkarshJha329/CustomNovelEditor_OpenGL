@@ -16,7 +16,7 @@ int lastSelectedEntity = -1;
 int lastSelectedEntityDelete = -1;
 
 std::vector<int> deletedNotesEntities;
-std::vector<bool> resetText(NUM_NOTES);
+std::vector<bool> resetText;
 
 int EXTRA_BUFFER_ALLOCATION = 100;
 
